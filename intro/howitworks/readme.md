@@ -1,4 +1,4 @@
-## Introduciton - How Things Really Work
+## Introduction - How Things Really Work
 
 The purpose of this folder is to break down how linux starts and executes a program you develop in `C`.  It does this via a series of examples that return a value to the shell after you execute the program.
 
