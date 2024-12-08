@@ -7,7 +7,7 @@ long syscall_error(long err) {
 
 #ifdef __aarch64__
 //From https://github.com/bminor/glibc/blob/master/sysdeps/unix/sysv/linux/aarch64/syscall.S
-long syscall(long number, long a1, long a2, long a3, 
+long my_better_systemcall(long number, long a1, long a2, long a3, 
              long a4, long a5, long a6) {
     register long syscall_num __asm__("x8") = number;
     register long arg0 __asm__("x0") = a1;
@@ -37,13 +37,13 @@ long syscall(long number, long a1, long a2, long a3,
 void _start(){
     int i;
     i = 28;
-    syscall(93,i,0,0,0,0,0);
+    my_better_systemcall(93,i,0,0,0,0,0);
 }
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
 //Intel/AMD 64 bit version
 //
-long syscall(long syscall_number, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
+long my_better_systemcall(long syscall_number, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
     long result;
     asm volatile (
         "movq %1, %%rax\n\t"       // Syscall number -> rax

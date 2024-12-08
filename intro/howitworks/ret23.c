@@ -2,7 +2,7 @@
 //    run:  ./r23; echo $?
 //should produce 22 in shell
 
-#include <stdlib.h>
+//#include <stdlib.h>
 
 //Discussion points
 //   run readelf -h ./r23
