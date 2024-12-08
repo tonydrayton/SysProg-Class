@@ -1,4 +1,4 @@
-## Course Repository for CS283: Systems Programming
+## Course Repository for Systems Programming Class
 
 #### Introduction
 For this course I will be using git/github to share sample programs that we will discuss in class, and you will be using an enterprise git solution such as GitHub or GitLab for your own work and submitting programming assignments.
