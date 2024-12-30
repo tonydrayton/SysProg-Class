@@ -29,3 +29,6 @@ For each assigment (in its associated directory):
 
 4. Program source code will need to adhere to a general style we will be discussing in class.  While I will be fine with deviations from the style of code that I use, but you should be consistent and not adopt bad style practices that I will also be discussing in class (e.g., super long variable names, comments for comments sake, etc).  I also expect file names to be short and to the point, use proper extensions, and do not include special characters other than dashes or underscores.  Submissions that have file names that include things like spaces will not be graded.  
 
+#### How to Git* Video Guide
+
+See [Submitting Assignments](https://github.com/drexel-systems/sysprog-overview/blob/main/howto/SUBMIT_ASSIGNMENTS.md).
