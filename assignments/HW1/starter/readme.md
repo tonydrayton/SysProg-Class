@@ -92,3 +92,6 @@ To keep things easier your replacement should be case sensitive, in other words 
 
 Also watch out for the situation where your replacement can go beyond the length of `buff`.  If this happens you can handle it by reporting some sort of buffer overflow error, or you can handle it by truncating the right side of the string.  In either event, you can not overrun your buffer.
 
+#### Submitting Assignments
+
+See [Submitting Assignments](https://github.com/drexel-systems/sysprog-overview/blob/main/howto/SUBMIT_ASSIGNMENTS.md).
