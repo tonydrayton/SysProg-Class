@@ -6,13 +6,14 @@ The purpose of this assignment is a warm up to refresh your memory about how to 
 You will be writing a simple **Text Line Processor** utility in C.  The program will allow users to provide a string and a command line operation indicating the operation that you will perform on the provided string. The command line for this program is as follows:
 
 ```bash
-$ stringfun -[h|c|w|r] "sample string" [other_options]
+$ stringfun -[h|c|r|w|x] "sample string" [other_options]
 
 where:
   -h    prints help about the program
   -c    counts of the number of words in the "sample string"
   -r    reverses the characters (in place) in "sample string" 
   -w    prints the individual words and their length in the "sample string"
+  -x    takes sample string and 2 other strings, replaces the first with second
 ```
 
 #### Assignment Requirements
@@ -51,9 +52,9 @@ Take a look at the starter code that was provided, note that it should compile a
 
 5. Now you are ready to implement the remaining functionality.  The starter code stubs out the *count words* functionality.  Notice how there is a condition for it coded into the `switch` statement in `main()` and a handler function called `count_words()`.  This function accepts 3 arguments:  (a)a pointer to the buffer, (b) the length of the buffer, and (c)the length of the user supplied string. This function should return the number of words in the user supplied string and then print out `Word Count: ###`.  With this as your starter, implement all of the required code for the reverse string (option `-r`) and word print (option `-w`).  The output for these functions should be an error message similar to the one in the template for count words if an error occurs. If an error does not occur then the output should follow:
 
-    *  **For reverse string:**  `Reversed String: xxxxx` where `xxxxx` is the user supplied string where all of the characters are reversed.  You should only print out the user string and not any of the dot padding in your internal buffer.
+    *  **For reverse string [-r]:**  `Reversed String: xxxxx` where `xxxxx` is the user supplied string where all of the characters are reversed.  You should only print out the user string and not any of the dot padding in your internal buffer.
 
-    * **For word print:**  Consider the user provided the input `Systems Programming is Great!` the output should be:
+    * **For word print [-w]:**  Consider the user provided the input `Systems Programming is Great!` the output should be:
       ```
       Word Print
       ----------
@@ -63,6 +64,8 @@ Take a look at the starter code that was provided, note that it should compile a
       4. Great! (6)
       ```
       Note that each word should be printed on its own line followed by the number of characters in each word. 
+
+    * **For word search and replace [-x]:**  Your basic implementation is to just ensure that all of the arguments are provide.  In this case argc should be 5.  A sample run of this command would be `./stringfun -x "Systems Programming is Great" Great Awesome`.  For the primary part of the assignment you would ensure that the user provided the 3 required arguments for the `-x` flag.  From there you would just print out "Not Implemented!" and return an error code.  Note that if you want to challenge yourself, there is some significant extra credit being offered for implementing this feature.  See below.
 
 6. Finally see `TODO: #7` in the starter code.  If no errors occur, the final thing your program should do is print the entire `buff`.  This is handled by the `print_buff()` that is already implemented for you in your starter code.  You will likely find this helpful for debugging when you are implementing your solution.
 
@@ -77,7 +80,7 @@ Your grade will be assigned based on the following:
 
 - 10%: Answer quality for the non-coding questions asked in the `TODO:` blocks in the starter code. 
 
- #### Extra Credit (+15)
+ #### Extra Credit (+20)
 
 You may take on some extra credit to get more practice.  The extra credit involves adding a string replace function.  If you choose to do this assign it to the `-x` flag.  This enhancement should work as follows.  Consider the example:
 

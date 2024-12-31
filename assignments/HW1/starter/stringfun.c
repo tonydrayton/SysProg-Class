@@ -29,7 +29,8 @@ void print_buff(char *buff, int len){
 }
 
 void usage(char *exename){
-    printf("usage: %s [-h|c|r|w] \"string\"\n", exename);
+    printf("usage: %s [-h|c|r|w|x] \"string\" [other args]\n", exename);
+
 }
 
 int count_words(char *buff, int len, int str_len){
