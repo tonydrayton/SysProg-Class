@@ -19,6 +19,7 @@ bool isodd(int x){
 
 int main(){
     int a, b, c;
+    bool odd;
 
     a = 5;
     b = 20;
@@ -26,7 +27,8 @@ int main(){
 
     printf("The value of %d + %d is %d\n", a,b,c);
 
-    if (isodd(c))
+    odd = isodd(c);
+    if (odd)
         printf("The result is odd\n");
     else
         printf("The result is even\n");
