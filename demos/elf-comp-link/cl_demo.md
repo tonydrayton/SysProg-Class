@@ -263,34 +263,34 @@ For this part of the demo we will be looking into the statically linked version 
 
     Thus the linker replaced the address of the code generated in the object file `bl 0` with `bl 4007b0` which is the address of the implementation.  If we do this for other functions like `my_add()` via `objdump -d --disassemble=my_add ./cl_demo` we will see the same behavior, the `my_add()` function was resolved by the linker with its code starting at `0x40085c`.  We will see this for all of the functions, even the ones in the C runtime library since we dynamically linked this version of the executable.
 
-7. So what are all of these addresses? They are relitive addresses based on assuming the operating system loads the program starting at memory address 0.  More on this later.  But for now, look at the ELF header for the executable again by running `readelf -h ./cl_demo`.  This time look at the `Entry point address:` field:
+7.  So what are all of these addresses? They are relitive addresses based on assuming the operating system loads the program starting at memory address 0.  More on this later.  But for now, look at the ELF header for the executable again by running `readelf -h ./cl_demo`.  This time look at the `Entry point address:` field:
 
-```
-Entry point address:               0x400640
-```
+    ```
+    Entry point address:               0x400640
+    ```
 
-What exactly is located there?  Run `objdump --disassemble=_start ./cl_demo`. Notice the ELF file instructs the program to bootstrap by running the `_start()` function. This function does a bunch of things to setup the C runtime library.  The last thing that it does is to branch to `main()` via `b  4007dc`.  From above that is exactly where main is located in this executable. 
+    What exactly is located there?  Run `objdump --disassemble=_start ./cl_demo`. Notice the ELF file instructs the program to bootstrap by running the `_start()` function. This function does a bunch of things to setup the C runtime library.  The last thing that it does is to branch to `main()` via `b  4007dc`.  From above that is exactly where main is located in this executable. 
 
-```
-0000000000400640 <_start>:
-  400640:       d503201f        nop
-  400644:       d280001d        mov     x29, #0x0                       // #0
-  400648:       d280001e        mov     x30, #0x0                       // #0
-  40064c:       aa0003e5        mov     x5, x0
-  400650:       f94003e1        ldr     x1, [sp]
-  400654:       910023e2        add     x2, sp, #0x8
-  400658:       910003e6        mov     x6, sp
-  40065c:       90000000        adrp    x0, 400000 <__ehdr_start>
-  400660:       9119d000        add     x0, x0, #0x674
-  400664:       d2800003        mov     x3, #0x0                        // #0
-  400668:       d2800004        mov     x4, #0x0                        // #0
-  40066c:       940000c2        bl      400974 <__libc_start_main>
-  400670:       97ffff14        bl      4002c0 <abort>
+    ```
+    0000000000400640 <_start>:
+    400640:       d503201f        nop
+    400644:       d280001d        mov     x29, #0x0                       // #0
+    400648:       d280001e        mov     x30, #0x0                       // #0
+    40064c:       aa0003e5        mov     x5, x0
+    400650:       f94003e1        ldr     x1, [sp]
+    400654:       910023e2        add     x2, sp, #0x8
+    400658:       910003e6        mov     x6, sp
+    40065c:       90000000        adrp    x0, 400000 <__ehdr_start>
+    400660:       9119d000        add     x0, x0, #0x674
+    400664:       d2800003        mov     x3, #0x0                        // #0
+    400668:       d2800004        mov     x4, #0x0                        // #0
+    40066c:       940000c2        bl      400974 <__libc_start_main>
+    400670:       97ffff14        bl      4002c0 <abort>
 
-0000000000400674 <__wrap_main>:
-  400674:       d503201f        nop
-  400678:       14000059        b       4007dc <main>
-```
+    0000000000400674 <__wrap_main>:
+    400674:       d503201f        nop
+    400678:       14000059        b       4007dc <main>
+    ```
 
 
 
