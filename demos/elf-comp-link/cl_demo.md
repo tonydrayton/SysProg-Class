@@ -169,6 +169,55 @@ For this part of the demo we will be looking into the statically linked version 
     ```
     Notice this time the ELF file type is `TYPE EXEC`.
 
-    Now
+    Now, lets look at the disassembled code for `main()` in the executable by running :
+
+    ```bash
+    00000000004007dc <main>:
+    4007dc:       a9be7bfd        stp     x29, x30, [sp, #-32]!
+    4007e0:       910003fd        mov     x29, sp
+    4007e4:       528000a0        mov     w0, #0x5                        // #5
+    4007e8:       b90017e0        str     w0, [sp, #20]
+    4007ec:       52800280        mov     w0, #0x14                       // #20
+    4007f0:       b9001be0        str     w0, [sp, #24]
+    4007f4:       b9401be1        ldr     w1, [sp, #24]
+    4007f8:       b94017e0        ldr     w0, [sp, #20]
+    4007fc:       94000018        bl      40085c <my_add>
+    400800:       b9001fe0        str     w0, [sp, #28]
+    400804:       b9401fe3        ldr     w3, [sp, #28]
+    400808:       b9401be2        ldr     w2, [sp, #24]
+    40080c:       b94017e1        ldr     w1, [sp, #20]
+    400810:       900002a0        adrp    x0, 454000 <__gcc_personality_v0+0x3c>
+    400814:       9111a000        add     x0, x0, #0x468
+    400818:       9400039a        bl      401680 <_IO_printf>
+    40081c:       b9401fe0        ldr     w0, [sp, #28]
+    400820:       97ffffe4        bl      4007b0 <isodd>
+    400824:       39004fe0        strb    w0, [sp, #19]
+    400828:       39404fe0        ldrb    w0, [sp, #19]
+    40082c:       12000000        and     w0, w0, #0x1
+    400830:       7100001f        cmp     w0, #0x0
+    400834:       540000a0        b.eq    400848 <main+0x6c>  // b.none
+    400838:       900002a0        adrp    x0, 454000 <__gcc_personality_v0+0x3c>
+    40083c:       91122000        add     x0, x0, #0x488
+    400840:       9400148c        bl      405a70 <_IO_puts>
+    400844:       14000004        b       400854 <main+0x78>
+    400848:       900002a0        adrp    x0, 454000 <__gcc_personality_v0+0x3c>
+    40084c:       91128000        add     x0, x0, #0x4a0
+    400850:       94001488        bl      405a70 <_IO_puts>
+    400854:       52800000        mov     w0, #0x0                        // #0
+    400858:       94000382        bl      401660 <exit>
+    ```
+
+    Filtering out the function calls, aka the `bl instructions`
+
+    ```bash
+    00000000004007dc <main>:
+    4007fc:       94000018        bl      40085c <my_add>
+    400818:       9400039a        bl      401680 <_IO_printf>
+    400820:       97ffffe4        bl      4007b0 <isodd>
+    400840:       9400148c        bl      405a70 <_IO_puts>
+    400850:       94001488        bl      405a70 <_IO_puts>
+    400858:       94000382        bl      401660 <exit>
+    ```
+    This time notice that all of the machine code for the `bl` instruction still starts with `100101` however the remaining zeros were replaced with offsets to where these functions are actually located.
 
 
