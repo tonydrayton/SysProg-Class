@@ -79,7 +79,7 @@ For this part of the demo we will be looking into the statically linked version 
 
     **sidebar** where did `puts()` come from, we never call that function.  This is a gcc "optimization".  When we call `printf()`, the `printf()` function in the C runtime library is called if we use any sort of formatting in the call.  We did this here: `printf("The value of %d + %d is %d\n", a,b,c);`.  However, if we call `printf()` without any formatting the compiler replaces it with a simpler and faster call to `puts()` like we did here: `printf("The result is odd\n");`.  Back to the demo...
 
-    Now lets disassemble main by running `objdump -d ./cl_demo.o`.  I am running on an ARM-based machine:
+3.  Now lets disassemble main by running `objdump -d ./cl_demo.o`.  I am running on an ARM-based machine:
 
     ```bash
     000000000000002c <main>:
