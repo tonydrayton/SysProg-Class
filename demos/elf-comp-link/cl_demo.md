@@ -142,4 +142,33 @@ For this part of the demo we will be looking into the statically linked version 
     ```
     Just like the ARM version, the machine code for Intel/AMD is `e6` for the `call` opcode and all zeros for where to branch because its undefined in a `REL` ELF file (the format for .o object files).
 
+4.  Now lets look at the linked version `cl_demo`.  Since this file is statically linked, the linker basically combines all of the `.text` and `.data` sections to create an executable ELF file.  Running:
+
+    ```bash
+    ➜  elf-comp-link git:(main) readelf -h ./cl_demo      
+    ELF Header:
+    Magic:   7f 45 4c 46 02 01 01 03 00 00 00 00 00 00 00 00 
+    Class:                             ELF64
+    Data:                              2's complement, little endian
+    Version:                           1 (current)
+    OS/ABI:                            UNIX - GNU
+    ABI Version:                       0
+    Type:                              EXEC (Executable file)
+    Machine:                           AArch64
+    Version:                           0x1
+    Entry point address:               0x400640
+    Start of program headers:          64 (bytes into file)
+    Start of section headers:          640088 (bytes into file)
+    Flags:                             0x0
+    Size of this header:               64 (bytes)
+    Size of program headers:           56 (bytes)
+    Number of program headers:         6
+    Size of section headers:           64 (bytes)
+    Number of section headers:         32
+    Section header string table index: 31
+    ```
+    Notice this time the ELF file type is `TYPE EXEC`.
+
+    Now
+
 
