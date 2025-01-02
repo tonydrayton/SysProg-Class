@@ -292,5 +292,11 @@ For this part of the demo we will be looking into the statically linked version 
     400678:       14000059        b       4007dc <main>
     ```
 
+    Getting back to all of these addresses.  Linux uses a position independent code model.  The executable generates all addresses assuming the program is loaded at memory location 0.  If that was the case the `_start()` function to get things running would be positioned in memory location `0x400640`. 
+
+    Linux uses a special security feature called Address Space Layout Randomization (ASLR).  You can see if this is enabled by `cat /proc/sys/kernel/randomize_va_space`.  If the value returned is `0` ASLR is disabled, `2` is fully enabled, and `1` is partially enabled. 
+
+    
+
 
 
