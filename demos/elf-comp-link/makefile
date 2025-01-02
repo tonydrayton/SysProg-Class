@@ -6,6 +6,7 @@ all: cl_demo
 
 # Static build target
 static: LDFLAGS=-static
+static: CFLAGS+=-static
 static: cl_demo
 
 cl_demo: cl_demo.o math_stuff.o

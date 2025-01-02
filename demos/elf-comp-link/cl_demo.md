@@ -24,7 +24,7 @@
     gcc -Wall -g -c math_stuff.c
     gcc -static -o cl_demo cl_demo.o math_stuff.o
     bsm23@code:~/SysProg-Class/demos/elf-comp-link$ ls -l ./cl_demo
-    -rwxr-xr-x 1 bsm23 bsm23 642128 Jan  2 09:01 ./cl_demo
+    -rwxr-xr-x 1 bsm23 bsm23 642136 Jan  2 09:01 ./cl_demo
     ```
     Notice that the statically linked version of the program comes in at 642,128 bytes, compared with the standard (dynamically) linked version that comes in much smaller at 72,600 bytes.  This is almost `9x` smaller.  We will get into this shortly.
 
@@ -117,10 +117,29 @@ For this part of the demo we will be looking into the statically linked version 
     a8:   94000000        bl      0 <exit>
     ```
 
+    Lets factor out the function calls, in ARM the instruction is `bl` that has the opcode `100101`:
 
-    Notice that for `cl_demo.o`:
     ```bash
-        16: 0000000000000000    40 FUNC    GLOBAL DEFAULT    1 my_add
+    000000000000002c <main>:
+    4c:   94000000        bl      0 <my_add>
+    68:   94000000        bl      0 <printf>
+    70:   94000000        bl      0 <isodd>
+    90:   94000000        bl      0 <puts>
+    a0:   94000000        bl      0 <puts>
+    a8:   94000000        bl      0 <exit>
     ```
+
+    The machine code for all of these calls is exactly the same thing: `0x94000000`.  In binary that is `0b100101 <26 more zeros>`.  Thus, the opcode is `bl (100101)` but the jump address is unknown so its replaced with all zeros.  If you have an Intel machine, or run on tux, the same thing happens, but this time the assembler instruction is `call` vs `bl`.  Running on tux, all of the function calls in `cl_demo.o`:
+
+    ```bash
+    000000000000002c <main>:
+    47:	e8 00 00 00 00       	call   4c <main+0x29>
+    69:	e8 00 00 00 00       	call   6e <main+0x4b>
+    73:	e8 00 00 00 00       	call   78 <main+0x55>
+    8b:	e8 00 00 00 00       	call   90 <main+0x6d>
+    9c:	e8 00 00 00 00       	call   a1 <main+0x7e>
+    a6:	e8 00 00 00 00       	call   ab <main+0x88>
+    ```
+    Just like the ARM version, the machine code for Intel/AMD is `e6` for the `call` opcode and all zeros for where to branch because its undefined in a `REL` ELF file (the format for .o object files).
 
 
