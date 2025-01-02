@@ -41,18 +41,18 @@ For this part of the demo we will be looking into the statically linked version 
     Notice both of these files have the type of `REL(Relocatable file)` with an `Entry point address = 0`.  ELF files that are of type `REL` cannot be executed.
 
 2. Now lets look at the sections:
-```bash
-readelf -s ./cl_demo.o
-readelf -s ./math_stuff.o
-```
-Notice that for `cl_demo.o`:
-```bash
-    18: 0000000000000000    44 FUNC    GLOBAL DEFAULT    1 isodd
-    19: 000000000000002c   124 FUNC    GLOBAL DEFAULT    1 main
-    20: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND my_add
-    21: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND printf
-    22: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND puts
-    23: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND exit
-```
+    ```bash
+    readelf -s ./cl_demo.o
+    readelf -s ./math_stuff.o
+    ```
+    Notice that for `cl_demo.o`:
+    ```bash
+        18: 0000000000000000    44 FUNC    GLOBAL DEFAULT    1 isodd
+        19: 000000000000002c   124 FUNC    GLOBAL DEFAULT    1 main
+        20: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND my_add
+        21: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND printf
+        22: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND puts
+        23: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND exit
+    ```
 
 
