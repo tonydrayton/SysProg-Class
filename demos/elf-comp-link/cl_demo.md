@@ -169,7 +169,21 @@ For this part of the demo we will be looking into the statically linked version 
     ```
     Notice this time the ELF file type is `TYPE EXEC`.
 
-    Now, lets look at the disassembled code for `main()` in the executable by running :
+5.  Remember the `UDF` undefined symbols from the object file, lets look at what happened to them.  Running `readelf -s ./cl_demo | more` shows that we now have a lot of symbols, 3059 to be exact.  Many of these come from the C runtime library.  To filter out the ones that we want we use `grep`.  For example: `readelf -s ./cl_demo | grep "\bmain"` will look for the `main` function symbol. The current situation is shown below:
+
+    ```bash
+    Symbol table '.symtab' contains 3059 entries:
+     Num:    Value          Size Type    Bind   Vis      Ndx Name
+       6: 00000000004002c0     0 SECTION LOCAL  DEFAULT    6 .text
+    2179: 00000000004007b0    44 FUNC    GLOBAL DEFAULT    6 isodd
+    2624: 00000000004007dc   128 FUNC    GLOBAL DEFAULT    6 main
+    2636: 000000000040085c    40 FUNC    GLOBAL DEFAULT    6 my_add
+    1938: 0000000000401680   196 FUNC    GLOBAL DEFAULT    6 printf
+    2133: 0000000000405a70   584 FUNC    WEAK   DEFAULT    6 puts
+    2875: 0000000000401660    28 FUNC    GLOBAL HIDDEN     6 exit
+    ```
+
+    Take a look at the value for main, its `0x00000000004007dc`. Now, lets look at the disassembled code for `main()` in the executable by running `objdump -d --disassemble=main ./cl_demo`.  **NOTICE that the first instruction in main is at location `0x00000000004007dc`, the same value in the symbol table.**
 
     ```bash
     00000000004007dc <main>:
@@ -207,7 +221,7 @@ For this part of the demo we will be looking into the statically linked version 
     400858:       94000382        bl      401660 <exit>
     ```
 
-    Filtering out the function calls, aka the `bl instructions`
+6. Next, lets see what the linker did to the function calls.  Filtering out the function calls, aka the `bl`:
 
     ```bash
     00000000004007dc <main>:
@@ -219,5 +233,64 @@ For this part of the demo we will be looking into the statically linked version 
     400858:       94000382        bl      401660 <exit>
     ```
     This time notice that all of the machine code for the `bl` instruction still starts with `100101` however the remaining zeros were replaced with offsets to where these functions are actually located.
+
+    Lets dig into a few example. Lets look at the call to the `isodd()` function.  From above:
+
+    ```
+    400820:       97ffffe4        bl      4007b0 <isodd>
+    ```
+    Now lets disassemble `isodd()` using `objdump -d --disassemble=isodd ./cl_demo`:
+
+    ```bash
+    00000000004007b0 <isodd>:
+    4007b0:       d10043ff        sub     sp, sp, #0x10
+    4007b4:       b9000fe0        str     w0, [sp, #12]
+    4007b8:       b9400fe0        ldr     w0, [sp, #12]
+    4007bc:       12000000        and     w0, w0, #0x1
+    4007c0:       7100001f        cmp     w0, #0x0
+    4007c4:       54000060        b.eq    4007d0 <isodd+0x20>  // b.none
+    4007c8:       52800020        mov     w0, #0x1                        // #1
+    4007cc:       14000002        b       4007d4 <isodd+0x24>
+    4007d0:       52800000        mov     w0, #0x0                        // #0
+    4007d4:       910043ff        add     sp, sp, #0x10
+    4007d8:       d65f03c0        ret
+    ```
+    Notice the `isodd()` function starts at position `0x4007b0`. And in `main()` the `bl` instrucion to call `isodd()`
+
+    ```
+    400820:       97ffffe4        bl      4007b0 <isodd>
+    ```
+
+    Thus the linker replaced the address of the code generated in the object file `bl 0` with `bl 4007b0` which is the address of the implementation.  If we do this for other functions like `my_add()` via `objdump -d --disassemble=my_add ./cl_demo` we will see the same behavior, the `my_add()` function was resolved by the linker with its code starting at `0x40085c`.  We will see this for all of the functions, even the ones in the C runtime library since we dynamically linked this version of the executable.
+
+7. So what are all of these addresses? They are relitive addresses based on assuming the operating system loads the program starting at memory address 0.  More on this later.  But for now, look at the ELF header for the executable again by running `readelf -h ./cl_demo`.  This time look at the `Entry point address:` field:
+
+```
+Entry point address:               0x400640
+```
+
+What exactly is located there?  Run `objdump --disassemble=_start ./cl_demo`. Notice the ELF file instructs the program to bootstrap by running the `_start()` function. This function does a bunch of things to setup the C runtime library.  The last thing that it does is to branch to `main()` via `b  4007dc`.  From above that is exactly where main is located in this executable. 
+
+```
+0000000000400640 <_start>:
+  400640:       d503201f        nop
+  400644:       d280001d        mov     x29, #0x0                       // #0
+  400648:       d280001e        mov     x30, #0x0                       // #0
+  40064c:       aa0003e5        mov     x5, x0
+  400650:       f94003e1        ldr     x1, [sp]
+  400654:       910023e2        add     x2, sp, #0x8
+  400658:       910003e6        mov     x6, sp
+  40065c:       90000000        adrp    x0, 400000 <__ehdr_start>
+  400660:       9119d000        add     x0, x0, #0x674
+  400664:       d2800003        mov     x3, #0x0                        // #0
+  400668:       d2800004        mov     x4, #0x0                        // #0
+  40066c:       940000c2        bl      400974 <__libc_start_main>
+  400670:       97ffff14        bl      4002c0 <abort>
+
+0000000000400674 <__wrap_main>:
+  400674:       d503201f        nop
+  400678:       14000059        b       4007dc <main>
+```
+
 
 
