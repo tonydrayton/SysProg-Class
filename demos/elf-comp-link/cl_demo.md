@@ -303,7 +303,8 @@ To better understand dynamic linking we will start off with a simpler program ca
 ```c
 #include <stdio.h>
 
-//gcc -g -fno-pie -no-pie -o dl_printf dl_printf.c   
+//executable: gcc -g -fno-pie -no-pie -o dl_printf dl_printf.c   
+//object:     gcc -g -c -fno-pie -no-pie -o dl_printf.o dl_printf.c 
 int main(){
     int i;
 
@@ -313,6 +314,8 @@ int main(){
     printf("Calling printf - time %d\n",i);
 }
 ```
+Note the commands to compile and link the program are shown as comments. We will be examining both the object file and executable moving forward.  Also notice the reference to `-no-pie` in the compile steps.  We will talk about this later in the course, but for for now it eliminates a security feature in Linux called Address Space Layout Randomization (ASLR), by eliminating the default compiler option to create a **position independent executable**. Eliminating this feature will make demonstrating and showing how dynamic linking works much easier.  
+
 The objective of this is to understand how the implementation for the `printf()` function gets resolved.  This function is part of `libc` and by default is dynamically linked into your program.
 
 Dynamic linking is used by just about every modern operating system.  In windows they are called **dynamic link libraries** or DLLs.  In Linux they are called **shared objects** and are generally represented by files with `.so` extensions.  Unlike static linking, where the linker resolves all symbols in advance of execution, dynamic linking resolves symbols at runtime dynamically.  
