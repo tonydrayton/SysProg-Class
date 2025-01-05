@@ -656,4 +656,4 @@ After we get bored and execute `continue` we will see the output from the second
     400548:       91006210        add     x16, x16, #0x18
     40054c:       d61f0220        br      x17
     ```
-    Notice how calling `printf()` using dynamic linking will always require 4 instructions after the first call.
+    Notice how calling `printf()` using dynamic linking will always require 4 instructions after the first call.  This is because the code for `printf@plt` cannot be modified.  What gets modified is the address in the GOT that `printf@plt` calls. 
