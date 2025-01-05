@@ -641,167 +641,19 @@ After we get bored and execute `continue` we will see the output from the second
 
 **RECAP**
 
-#### Dynamic Linking Deep Dive (old)
+1. Dynamic linking is enabled by several artifacts that are placed into the executable ELF file.  These include the PLT, the GOT and references to where the dynamic linker is located along with what requires dynamic linking.
 
-Next, we recompile for dynamic linking which is the default.  
+2. The C standard library bootstraps the dynamic linking process in `_start()`.  We saw that the C runtime library was not part of the memory layout of our test program until after `_start()` executed and we were in our own `main()` function.
 
-```bash
-touch *.c
-make
-```
-We next look at the symbol table of the executable:
+3. Dynamic linking uses clever indirection and a lazy approach.  The first time a call to a dynamically linked function is invoked, the code calls the dynamic linker that locates the exact entry point into the function, updates the GOT address, and calls the function.  The next time (and every other time) the function is called, the dynamic linker is bypassed becuase it updated the address to the function in the GOB.
 
-```bash
-readelf -s ./cl_demo | grep "\bUND"
-```
-We now see there are a number of **undefined (UND)** references.  
+4. Even with the one-time overhead of the first call dynamic linking is always less efficient that static linking.  With static linking, functions are called using 1 instruction.  On ARM it will be called using `bl <register with address of function>`.  With dynamic linking we always call the same code that is in the PLT, recall `printf@plt`:
 
-```bash
-bsm23@code:~/SysProg-Class/demos/elf-comp-link$ readelf -s ./cl_demo | grep "\bUND"
-     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
-     3: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND exit@GLIBC_2.17 (2)
-     4: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND _[...]@GLIBC_2.34 (3)
-     5: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_deregisterT[...]
-     6: 0000000000000000     0 FUNC    WEAK   DEFAULT  UND _[...]@GLIBC_2.17 (2)
-     7: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
-     8: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND abort@GLIBC_2.17 (2)
-     9: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND puts@GLIBC_2.17 (2)
-    10: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_registerTMC[...]
-    11: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND printf@GLIBC_2.17 (2)
-     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
-    74: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND exit@GLIBC_2.17
-    75: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_mai[...]
-    76: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_deregisterT[...]
-    79: 0000000000000000     0 FUNC    WEAK   DEFAULT  UND __cxa_finalize@G[...]
-    86: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
-    88: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND abort@GLIBC_2.17
-    90: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND puts@GLIBC_2.17
-    98: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_registerTMC[...]
-    99: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND printf@GLIBC_2.17
-```
-Next we can look at a special section in the ELF file called the program linkage table (PLT):
-
-```bash
-bsm23@code:~/SysProg-Class/demos/elf-comp-link$ objdump -d -j .plt ./cl_demo
-
-./cl_demo:     file format elf64-littleaarch64
-
-
-Disassembly of section .plt:
-
-0000000000000640 <.plt>:
- 640:   a9bf7bf0        stp     x16, x30, [sp, #-16]!
- 644:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 648:   f947ca11        ldr     x17, [x16, #3984]
- 64c:   913e4210        add     x16, x16, #0xf90
- 650:   d61f0220        br      x17
- 654:   d503201f        nop
- 658:   d503201f        nop
- 65c:   d503201f        nop
-
-0000000000000660 <exit@plt>:
- 660:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 664:   f947ce11        ldr     x17, [x16, #3992]
- 668:   913e6210        add     x16, x16, #0xf98
- 66c:   d61f0220        br      x17
-
-0000000000000670 <__libc_start_main@plt>:
- 670:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 674:   f947d211        ldr     x17, [x16, #4000]
- 678:   913e8210        add     x16, x16, #0xfa0
- 67c:   d61f0220        br      x17
-
-0000000000000680 <__cxa_finalize@plt>:
- 680:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 684:   f947d611        ldr     x17, [x16, #4008]
- 688:   913ea210        add     x16, x16, #0xfa8
- 68c:   d61f0220        br      x17
-
-0000000000000690 <__gmon_start__@plt>:
- 690:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 694:   f947da11        ldr     x17, [x16, #4016]
- 698:   913ec210        add     x16, x16, #0xfb0
- 69c:   d61f0220        br      x17
-
-00000000000006a0 <abort@plt>:
- 6a0:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 6a4:   f947de11        ldr     x17, [x16, #4024]
- 6a8:   913ee210        add     x16, x16, #0xfb8
- 6ac:   d61f0220        br      x17
-
-00000000000006b0 <puts@plt>:
- 6b0:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 6b4:   f947e211        ldr     x17, [x16, #4032]
- 6b8:   913f0210        add     x16, x16, #0xfc0
- 6bc:   d61f0220        br      x17
-
-00000000000006c0 <printf@plt>:
- 6c0:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 6c4:   f947e611        ldr     x17, [x16, #4040]
- 6c8:   913f2210        add     x16, x16, #0xfc8
- 6cc:   d61f0220        br      x17
- ```
-We see for each undefined function there is a `function_name@plt` entry.  
-
-The next thing we want to look at is the Global Offset Table (GOT).  Step 1 is to look at the relocations:
-
-```bash
-bsm23@code:~/SysProg-Class/demos/elf-comp-link$ readelf -r ./cl_demo
-
-Relocation section '.rela.dyn' at offset 0x4c0 contains 8 entries:
-  Offset          Info           Type           Sym. Value    Sym. Name + Addend
-00000001fd80  000000000403 R_AARCH64_RELATIV                    810
-00000001fd88  000000000403 R_AARCH64_RELATIV                    7c0
-00000001fff0  000000000403 R_AARCH64_RELATIV                    844
-000000020008  000000000403 R_AARCH64_RELATIV                    20008
-00000001ffd8  000500000401 R_AARCH64_GLOB_DA 0000000000000000 _ITM_deregisterTM[...] + 0
-00000001ffe0  000600000401 R_AARCH64_GLOB_DA 0000000000000000 __cxa_finalize@GLIBC_2.17 + 0
-00000001ffe8  000700000401 R_AARCH64_GLOB_DA 0000000000000000 __gmon_start__ + 0
-00000001fff8  000a00000401 R_AARCH64_GLOB_DA 0000000000000000 _ITM_registerTMCl[...] + 0
-
-Relocation section '.rela.plt' at offset 0x580 contains 7 entries:
-  Offset          Info           Type           Sym. Value    Sym. Name + Addend
-00000001ff98  000300000402 R_AARCH64_JUMP_SL 0000000000000000 exit@GLIBC_2.17 + 0
-00000001ffa0  000400000402 R_AARCH64_JUMP_SL 0000000000000000 __libc_start_main@GLIBC_2.34 + 0
-00000001ffa8  000600000402 R_AARCH64_JUMP_SL 0000000000000000 __cxa_finalize@GLIBC_2.17 + 0
-00000001ffb0  000700000402 R_AARCH64_JUMP_SL 0000000000000000 __gmon_start__ + 0
-00000001ffb8  000800000402 R_AARCH64_JUMP_SL 0000000000000000 abort@GLIBC_2.17 + 0
-00000001ffc0  000900000402 R_AARCH64_JUMP_SL 0000000000000000 puts@GLIBC_2.17 + 0
-00000001ffc8  000b00000402 R_AARCH64_JUMP_SL 0000000000000000 printf@GLIBC_2.17 + 0
-```
-Lets look at the line for `printf`:
-
-```bash
-00000001ffc8  000b00000402 R_AARCH64_JUMP_SL 0000000000000000 printf@GLIBC_2.17 + 0
-```
-Notice the address `0x1ffc8`.  Now lets go back to the disassembly for `printf@plt` from above:
-
-```bash
-00000000000006c0 <printf@plt>:
- 6c0:   f00000f0        adrp    x16, 1f000 <__FRAME_END__+0x1e588>
- 6c4:   f947e611        ldr     x17, [x16, #4040]
- 6c8:   913f2210        add     x16, x16, #0xfc8
- 6cc:   d61f0220        br      x17
-```
-The above references the inital starting point of the `GOT` to be at address `1f000`.  The next two lines load up the `X16` and `X17` registers with `0x1000 + 0xfc8 = 0x1fc8`.  Lets remember that value.
-
-Now lets go to the `GOT` in the ELF file:
-
-```bash
-Hex dump of section '.got':
- NOTE: This section has relocations against it, but these have NOT been applied to this dump.
-  0x0001ff80 00000000 00000000 00000000 00000000 ................
-  0x0001ff90 00000000 00000000 40060000 00000000 ........@.......
-  0x0001ffa0 40060000 00000000 40060000 00000000 @.......@.......
-  0x0001ffb0 40060000 00000000 40060000 00000000 @.......@.......
-  0x0001ffc0 40060000 00000000 40060000 00000000 @.......@.......
-  0x0001ffd0 90fd0100 00000000 00000000 00000000 ................
-  0x0001ffe0 00000000 00000000 00000000 00000000 ................
-  0x0001fff0 44080000 00000000 00000000 00000000 D...............
-  ```
-  We see several things repeating, but one thing of interest is that at address `0x1ffc8` is the memory address `0x40060000 00000000`
-
-
-
-
-
+    ``` bash
+    0000000000400540 <printf@plt>:
+    400540:       90000110        adrp    x16, 420000 <__libc_start_main@GLIBC_2.34>
+    400544:       f9400e11        ldr     x17, [x16, #24]
+    400548:       91006210        add     x16, x16, #0x18
+    40054c:       d61f0220        br      x17
+    ```
+    Notice how calling `printf()` using dynamic linking will always require 4 instructions after the first call.
