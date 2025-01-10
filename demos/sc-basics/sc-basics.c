@@ -22,7 +22,7 @@ long do_real_syscall(long, long, long, long, long, long, long);
 
 #ifdef __x86_64__ 
     //> ausyscall aarch64 --dump | grep write
-    #define WRITE_SYSCALL_NUM 64
+    #define WRITE_SYSCALL_NUM 1
 #endif
 
 long test_sc();
@@ -87,7 +87,7 @@ long do_write_syscall(int fd, char * buff, int len){
 
 #ifdef __aarch64__
 long do_real_syscall(long number, long a1, long a2, long a3, 
-             long a4, long a5, long a6){
+             long a4, long a5, long a6) {
     register long syscall_num __asm__("x8") = number;
     register long arg0 __asm__("x0") = a1;
     register long arg1 __asm__("x1") = a2;
@@ -95,16 +95,22 @@ long do_real_syscall(long number, long a1, long a2, long a3,
     register long arg3 __asm__("x3") = a4;
     register long arg4 __asm__("x4") = a5;
     register long arg5 __asm__("x5") = a6;
+    long ret;
 
     __asm__ volatile (
-        "svc 0x0        \n\t"   //execute syscall to OS
-        : "+r" (arg0)
-        : "r" (syscall_num), "r" (arg1), "r" (arg2), 
-        "r" (arg3), "r" (arg4), "r" (arg5)
-        : "memory"
+        "svc #0\n\t"
+        : "=r" (ret)              // Output: return value in x0
+        : "r" (syscall_num),      // Input: syscall number in x8
+          "r" (arg0),             // Input: arg0 in x0
+          "r" (arg1),             // Input: arg1 in x1
+          "r" (arg2),             // Input: arg2 in x2
+          "r" (arg3),             // Input: arg3 in x3
+          "r" (arg4),             // Input: arg4 in x4
+          "r" (arg5)              // Input: arg5 in x5
+        : "memory", "x6", "x7"  // Clobbers
     );
 
-    return arg0;
+    return ret;
 }
 #endif
 
@@ -118,13 +124,19 @@ long do_real_syscall(long number, long a1, long a2, long a3,
     register long arg3 __asm__("r10") = a4;
     register long arg4 __asm__("r8")  = a5;
     register long arg5 __asm__("r9")  = a6;
+    long ret;
 
     __asm__ volatile (
-        "syscall          \n\t"   // Invoke the syscall
-        : "+r" (arg0)              // Output: return value is in rdi
-        : "r" (syscall_num), "r" (arg1), "r" (arg2), 
-          "r" (arg3), "r" (arg4), "r" (arg5) // Inputs: syscall number and arguments
-        : "memory"                 // Clobber memory
+        "syscall\n\t"
+        : "=a" (ret)              // Output: return value in rax
+        : "r" (syscall_num),      // Input: syscall number in rax
+          "r" (arg0),             // Input: arg0 in rdi
+          "r" (arg1),             // Input: arg1 in rsi
+          "r" (arg2),             // Input: arg2 in rdx
+          "r" (arg3),             // Input: arg3 in r10
+          "r" (arg4),             // Input: arg4 in r8
+          "r" (arg5)              // Input: arg5 in r9
+        : "rcx", "r11", "memory"  // Clobbers: rcx, r11 are clobbered by syscall
     );
 
     return arg0;
