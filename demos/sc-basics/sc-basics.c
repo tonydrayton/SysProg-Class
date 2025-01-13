@@ -57,6 +57,9 @@ unsigned int systems_code_strlen(char *str){
 }
 
 void systems_code_str_to_upper(char *str) {
+    //remember c conventions for strings
+    //sequence of bytes, terminated by '\0' which is also byte=0
+    //'h','e','l','l','o','\0'
     char *ptr = str;
     if (!ptr) return;
     
