@@ -15,6 +15,7 @@ long do_write_syscall(int, char *, int);
 //functions that are processor specific
 long do_real_syscall(long, long, long, long, long, long, long);
 
+//Linux syscall numbers tend to differ on different platforms
 #ifdef __aarch64__
     //> ausyscall aarch64 --dump | grep write
     #define WRITE_SYSCALL_NUM 64  
