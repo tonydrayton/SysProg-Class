@@ -7,7 +7,7 @@
 }
 
 @test "bad args shows usage" {
-    run ./stringfun -z "Bad arg usage"  
+    run ./stringfun -z "Bad arg usage"
     [ "$status" -eq 1 ]
     [ "${lines[0]}" = "usage: ./stringfun [-h|c|r|w|x] \"string\" [other args]" ]
 }
@@ -71,30 +71,25 @@ Buffer:  [Lets get a lot of words to test...................]" ]
 
 @test "basic string search replace" {
     run ./stringfun -x "This is a bad test" bad  great
-    [ "$output" = "Buffer:  [This is a great test..............................]" ] ||
-    [ "$output" = "Not Implemented!" ]
+    [ "$output" = "Buffer:  [This is a great test..............................]" ]
 }
 
 @test "search replace not found" {
     run ./stringfun -x "This is a a long string for testing" bad  great
-    [ "$status" -ne 0 ] || 
-    [ "$output" = "Not Implemented!" ]
+    [ "$status" -ne 0 ]
 }
 
 @test "basic overflow search replace" {
     run ./stringfun -x "This is a super long string for testing my program" testing  validating
-    [ "$output" = "Buffer:  [This is a super long string for validating my prog]" ] ||
-    [ "$output" = "Not Implemented!" ]
+    [ "$output" = "Buffer:  [This is a super long string for validating my prog]" ]
 }
 
 @test "test overflow string replace" {
     run ./stringfun -x "This is a super long string for testing my program" testing  validating
-    [ "$output" = "Buffer:  [This is a super long string for validating my prog]" ] ||
-    [ "$output" = "Not Implemented!" ]
+    [ "$output" = "Buffer:  [This is a super long string for validating my prog]" ]
 }
 
 @test "test shorter string replace" {
     run ./stringfun -x "This is a super long string for testing my program" program  app
-    [ "$output" = "Buffer:  [This is a super long string for testing my app....]" ] || 
-    [ "$output" = "Not Implemented!" ]
+    [ "$output" = "Buffer:  [This is a super long string for testing my app....]" ]
 }
