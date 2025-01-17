@@ -809,21 +809,8 @@ extern int __overflow (FILE *, int);
 
 
 # 3 "0-basics.c"
-void loop_print_ints(int *input_array, int array_size)
-{
-    for (int i = 0; i < array_size; i++)
-    {
-# 16 "0-basics.c"
-    }
-
-
-    int *my_new_pointer = input_array;
-    for (int i = 0; i < array_size; i++)
-    {
-        printf("*my_new_pointer = %d, *input_array is %d\n", *my_new_pointer, *input_array);
-        my_new_pointer++;
-    }
-}
+void loop_print_ints(int *input_array, int array_size);
+void loop_print_string(char *input_array, int array_size);
 
 int main()
 {
@@ -836,7 +823,20 @@ int main()
 
     loop_print_ints(digits, 4);
 
-    printf("after %d\n", *digits);
+
 
     return 0;
+}
+
+void loop_print_ints(int *input_array, int array_size)
+{
+    for (int i = 0; i < array_size; i++)
+    {
+# 35 "0-basics.c"
+    }
+
+
+
+
+
 }
