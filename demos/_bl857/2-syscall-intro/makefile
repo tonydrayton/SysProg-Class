@@ -10,12 +10,12 @@ all: $(TARGET) .gitignore
 
 # Compile source to executable, object file, assembler file, and preprocessed file
 %: %.c
-	$(CC) $(CFLAGS) -o $@ $<
-	$(CC) $(CFLAGS) -S -o $@.s $<
+	@$(CC) $(CFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -S -o $@.s $<
 
 # Generate .gitignore
 .gitignore: $(TARGET)
-	echo $(TARGET) | tr ' ' '\n' > .gitignore
+	@echo $(TARGET) | tr ' ' '\n' > .gitignore
 
 # Clean up build files
 clean:

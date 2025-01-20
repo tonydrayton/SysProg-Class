@@ -2,7 +2,7 @@
 
 ausyscall --dump
 
-ausyscall --dump | grep exit_g
+ausyscall --dump | grep getpid
 
 ## Concept 2 - "generic" header file
 

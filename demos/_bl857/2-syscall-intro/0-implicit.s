@@ -7,7 +7,7 @@
 main:
 .LFB0:
 	.file 1 "0-implicit.c"
-	.loc 1 6 1
+	.loc 1 8 1
 	.cfi_startproc
 	endbr64
 	pushq	%rbp
@@ -15,9 +15,9 @@ main:
 	.cfi_offset 6, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register 6
-	.loc 1 7 12
+	.loc 1 9 12
 	movl	$101, %eax
-	.loc 1 8 1
+	.loc 1 10 1
 	popq	%rbp
 	.cfi_def_cfa 7, 8
 	ret
@@ -43,7 +43,7 @@ main:
 	.uleb128 0x2
 	.long	.LASF3
 	.byte	0x1
-	.byte	0x5
+	.byte	0x7
 	.byte	0x5
 	.long	0x4c
 	.quad	.LFB0
