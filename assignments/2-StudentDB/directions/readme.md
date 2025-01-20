@@ -6,4 +6,4 @@ Please reference these files:
 
 2. Non-coding questions that must be submitted: [A2-Questions](./a2-questions.md)
 
-3. Starter code for assignment: See the [`./starter` directory](./starter/)
+3. Starter code for assignment: See the [`./starter`](./starter/) directory.
