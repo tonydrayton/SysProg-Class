@@ -15,6 +15,8 @@ int  setup_buff(char *, char *, int);
 int  count_words(char *, int, int);
 //add additional prototypes here
 void word_print(char *, int);
+int str_length(const char *);
+int str_compare(const char *, const char *, int);
 
 
 int setup_buff(char *buff, char *user_str, int len) {
@@ -73,15 +75,15 @@ int setup_buff(char *buff, char *user_str, int len) {
 }
 
 void print_buff(char *buff, int len){
-    printf("Buffer:  [");
-    for (int i=0; i<len; i++){
-        putchar(*(buff+i));
-    }
-    printf("]\n");
+	printf("Buffer:  [");
+	for (int i=0; i<len; i++){
+		putchar(*(buff+i));
+	}
+	printf("]\n");
 }
 
 void usage(char *exename){
-    printf("usage: %s [-h|c|r|w|x] \"string\" [other args]\n", exename);
+	printf("usage: %s [-h|c|r|w|x] \"string\" [other args]\n", exename);
 
 }
 
@@ -167,8 +169,8 @@ int replace_word(char *buff, int len, int str_len, char *old_word, char *new_wor
 		return -1;
 	}
 
-	int oldLength = strlen(old_word);
-	int newLength = strlen(new_word);
+	int oldLength = str_length(old_word);
+	int newLength = str_length(new_word);
 
 	if (oldLength == 0 || oldLength > str_len) {
 		return -1;
@@ -186,7 +188,7 @@ int replace_word(char *buff, int len, int str_len, char *old_word, char *new_wor
 	int replaced = 0;
 
 	while (i < str_len && temp_index < len) {
-		if (strncmp(&buff[i], old_word, oldLength) == 0) {
+		if (str_compare(&buff[i], old_word, oldLength)) {
 			if (temp_index + newLength < len - 1) {
 				// copy the new_word to the new buffer at the index of the old_word
 				memcpy(&new_buff[temp_index], new_word, newLength);
@@ -205,7 +207,10 @@ int replace_word(char *buff, int len, int str_len, char *old_word, char *new_wor
 	}
 
 	new_buff[len] = '\0';
-	memcpy(buff, new_buff, len);
+
+	for (int j = 0; j < len; j++) {
+		buff[j] = new_buff[j];
+	}
 	free(new_buff);
 	return replaced;
 }
@@ -213,47 +218,47 @@ int replace_word(char *buff, int len, int str_len, char *old_word, char *new_wor
 
 int main(int argc, char *argv[]){
 
-    char *buff;             //placehoder for the internal buffer
-    char *input_string;     //holds the string provided by the user on cmd line
-    char opt;               //used to capture user option from cmd line
-    int  rc;                //used for return codes
-    int  user_str_len;      //length of user supplied string
+	char *buff;             //placehoder for the internal buffer
+	char *input_string;     //holds the string provided by the user on cmd line
+	char opt;               //used to capture user option from cmd line
+	int  rc;                //used for return codes
+	int  user_str_len;      //length of user supplied string
 
-    //TODO:✅  #1. WHY IS THIS SAFE, aka what if arv[1] does not exist?
-    //      PLACE A COMMENT BLOCK HERE EXPLAINING
+	//TODO:✅  #1. WHY IS THIS SAFE, aka what if arv[1] does not exist?
+	//      PLACE A COMMENT BLOCK HERE EXPLAINING
 	/*
 		This is safe because argc is checked to be at least 2 arguments before argv is checked.
 		If argc is 0 or 1, the body of the if statement will be evaluated and the check for argv will be skipped.
 		If argc is 2 or more, argv will have at least an element at indexes 1 and 2 guaranteed.
 	*/
-    if ((argc < 2) || (*argv[1] != '-')){
-        usage(argv[0]);
-        exit(1);
-    }
+	if ((argc < 2) || (*argv[1] != '-')){
+		usage(argv[0]);
+		exit(1);
+	}
 
-    opt = (char)*(argv[1]+1);   //get the option flag
+	opt = (char)*(argv[1]+1);   //get the option flag
 
-    //handle the help flag and then exit normally
-    if (opt == 'h'){
-        usage(argv[0]);
-        exit(0);
-    }
+	//handle the help flag and then exit normally
+	if (opt == 'h'){
+		usage(argv[0]);
+		exit(0);
+	}
 
-    //WE NOW WILL HANDLE THE REQUIRED OPERATIONS
+	//WE NOW WILL HANDLE THE REQUIRED OPERATIONS
 
-    //TODO:✅  #2 Document the purpose of the if statement below
-    //      PLACE A COMMENT BLOCK HERE EXPLAINING
+	//TODO:✅  #2 Document the purpose of the if statement below
+	//      PLACE A COMMENT BLOCK HERE EXPLAINING
 	/*
 		If there are less than 3 arguments, run on the first argument
 		This is a check for if there are no options supplied, because ideally there should be at least 2 arguments, the	command and the string.
 		If there is no other arguments (options), the program will just output the usage.
 	*/
-    if (argc < 3){
-        usage(argv[0]);
-        exit(1);
-    }
+	if (argc < 3){
+		usage(argv[0]);
+		exit(1);
+	}
 
-    input_string = argv[2]; //capture the user input string
+	input_string = argv[2]; //capture the user input string
 
 	// TODO:✅  #3 Allocate space for the buffer using malloc and
 	//          handle error if malloc fails by exiting with a
@@ -265,29 +270,29 @@ int main(int argc, char *argv[]){
 		exit(99);
 	}
 
-    user_str_len = setup_buff(str_buff, input_string, BUFFER_SZ);     //see todos
-    if (user_str_len < 0){
+	user_str_len = setup_buff(str_buff, input_string, BUFFER_SZ);     //see todos
+	if (user_str_len < 0){
 		if(user_str_len == -1) {
 			printf("Error: Provided string is too long.\n");
 			exit(3);
 		} else {
 			printf("Error setting up buffer, error = %d", user_str_len);
-     		exit(2);
+			exit(2);
 		}
-    }
+	}
 
-    switch (opt){
-        case 'c':
-            rc = count_words(str_buff, BUFFER_SZ, user_str_len);  //you need to implement
-            if (rc < 0){
-                printf("Error counting words, rc = %d", rc);
-                exit(2);
-            }
-            printf("Word Count: %d\n", rc);
-            break;
+	switch (opt){
+		case 'c':
+			rc = count_words(str_buff, BUFFER_SZ, user_str_len);  //you need to implement
+			if (rc < 0){
+				printf("Error counting words, rc = %d", rc);
+				exit(2);
+			}
+			printf("Word Count: %d\n", rc);
+			break;
 
-        //TODO:✅  #5 Implement the other cases for 'r' and 'w' by extending
-        //       the case statement options
+		//TODO:✅  #5 Implement the other cases for 'r' and 'w' by extending
+		//       the case statement options
 		case 'r':
 			reverse_buff(str_buff, user_str_len);
 			break;
@@ -302,15 +307,15 @@ int main(int argc, char *argv[]){
 				exit(1);
 			}
 			break;
-        default:
-            usage(argv[0]);
-            exit(1);
-    }
+		default:
+			usage(argv[0]);
+			exit(1);
+	}
 
-    //TODO:✅  #6 Dont forget to free your buffer before exiting
-    print_buff(str_buff, BUFFER_SZ);
+	//TODO:✅  #6 Dont forget to free your buffer before exiting
+	print_buff(str_buff, BUFFER_SZ);
 	free(str_buff);
-    exit(0);
+	exit(0);
 }
 
 //TODO:✅ #7  Notice all of the helper functions provided in the
@@ -325,3 +330,21 @@ int main(int argc, char *argv[]){
  * Since the length is passed as an argument, the function can be used with any buffer of the same length.
  * And the function does not have to be modified if the buffer size changes.
  */
+
+// utility string functions
+int str_length(const char *str) {
+	int length = 0;
+	while (str[length] != '\0') {
+		length++;
+	}
+	return length;
+}
+
+int str_compare(const char *str1, const char *str2, int n) {
+	for (int i = 0; i < n; i++) {
+		if (str1[i] != str2[i] || str1[i] == '\0' || str2[i] == '\0') {
+			return 0;
+		}
+	}
+	return 1;
+}
