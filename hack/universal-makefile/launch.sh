@@ -12,7 +12,7 @@ for arg in "${args[@]}"; do
         \"program\": \"\${workspaceFolder}/$arg\",
         \"args\": [],
         \"stopAtEntry\": false,
-        \"cwd\": \"\${fileDirname}\",
+        \"cwd\": \"\${workspaceFolder}\",
         \"environment\": [],
         \"externalConsole\": false,
         \"MIMode\": \"gdb\",
