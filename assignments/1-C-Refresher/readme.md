@@ -80,7 +80,11 @@ Your grade will be assigned based on the following:
 
 - 10%: Answer quality for the non-coding questions asked in the `TODO:` blocks in the starter code. 
 
- #### Extra Credit (+20)
+#### Extra Credit (+5)
+
+Implement your own helper function to calculate string length; use it in the same way you would have used strlen() from stdlib.
+
+#### Extra Credit (+20)
 
 You may take on some extra credit to get more practice.  The extra credit involves adding a string replace function.  If you choose to do this assign it to the `-x` flag.  This enhancement should work as follows.  Consider the example:
 
