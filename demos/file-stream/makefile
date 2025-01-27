@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 
-all: file-cp-sc file-cp-libc
+all: file-cp-sc file-cp-libc file-cp-memmap
 
 file-cp-sc: file-cp-sc.c
 	$(CC) $(CFLAGS) -o $@ $<
