@@ -62,20 +62,52 @@ int open_db(char *dbFile, bool should_truncate)
  */
 int get_student(int fd, int id, student_t *s)
 {
-    // TODO
-    return NOT_IMPLEMENTED_YET;
+	if (fd < 0 || s == NULL || id < 0) {
+		return ERR_DB_FILE;
+	}
+
+	if (validate_range(id, MIN_STD_GPA) != NO_ERROR) {
+		return SRCH_NOT_FOUND;
+	}
+
+	off_t offset = id * sizeof(student_t);
+
+	if (lseek(fd, offset, SEEK_SET) == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	ssize_t bytes_read = read(fd, s, sizeof(student_t));
+	if (bytes_read == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+	if (bytes_read < sizeof(student_t)) {
+		return SRCH_NOT_FOUND;
+	}
+
+	student_t empty = {0};
+	if (memcmp(s, &empty, sizeof(student_t)) == 0) {
+		return SRCH_NOT_FOUND;
+	}
+
+	if (s->id != id) {
+		return SRCH_NOT_FOUND;
+	}
+
+	return NO_ERROR;
 }
 
 /*
- *  add_student
- *      fd:     linux file descriptor
- *      id:     student id (range is defined in db.h )
- *      fname:  student first name
- *      lname:  student last name
- *      gpa:    GPA as an integer (range defined in db.h)
- *
- *  Adds a new student to the database.  After calculating the index for the
- *  student, check if there is another student already at that location.  A good
+*  add_student
+*      fd:     linux file descriptor
+*      id:     student id (range is defined in db.h )
+*      fname:  student first name
+*      lname:  student last name
+*      gpa:    GPA as an integer (range defined in db.h)
+*
+*  Adds a new student to the database.  After calculating the index for the
+*  student, check if there is another student already at that location.  A good
  *  way is to use something like memcmp() to ensure that the location for this
  *  student contains all zero byes indicating the space is empty.
  *
@@ -93,9 +125,52 @@ int get_student(int fd, int id, student_t *s)
  */
 int add_student(int fd, int id, char *fname, char *lname, int gpa)
 {
-    // TODO
-    printf(M_NOT_IMPL);
-    return NOT_IMPLEMENTED_YET;
+	if (fd < 0 || fname == NULL || lname == NULL) {
+		printf(M_ERR_DB_WRITE);
+		return ERR_DB_FILE;
+	}
+
+	if (validate_range(id, gpa) != NO_ERROR) {
+		return ERR_DB_OP;
+	}
+
+	student_t new_student = {0};
+	new_student.id = id;
+	strncpy(new_student.fname, fname, 24 - 1);  // 24 bytes
+	strncpy(new_student.lname, lname, 32 - 1);  // 32 bytes
+	new_student.gpa = gpa;
+
+	off_t offset = id * sizeof(student_t);
+
+	if (lseek(fd, offset, SEEK_SET) == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	student_t existing_student = {0};
+	ssize_t bytes_read = read(fd, &existing_student, sizeof(student_t));
+
+	if (bytes_read == sizeof(student_t)) {
+		student_t empty_student = {0};
+		if (memcmp(&existing_student, &empty_student, sizeof(student_t)) != 0) {
+			printf(M_ERR_DB_ADD_DUP, id);
+			return ERR_DB_OP;
+		}
+	}
+
+	if (lseek(fd, offset, SEEK_SET) == -1) {
+		printf(M_ERR_DB_WRITE);
+		return ERR_DB_FILE;
+	}
+
+	ssize_t bytes_written = write(fd, &new_student, sizeof(student_t));
+	if (bytes_written != sizeof(student_t)) {
+		printf(M_ERR_DB_WRITE);
+		return ERR_DB_FILE;
+	}
+
+	printf(M_STD_ADDED, id);
+	return NO_ERROR;
 }
 
 /*
@@ -122,9 +197,39 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
  */
 int del_student(int fd, int id)
 {
-    // TODO
-    printf(M_NOT_IMPL);
-    return NOT_IMPLEMENTED_YET;
+	if (fd < 0 || id < 0) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	student_t student = {0};
+
+	int rc = get_student(fd, id, &student);
+	if (rc != NO_ERROR) {
+		if (rc == SRCH_NOT_FOUND) {
+			printf(M_STD_NOT_FND_MSG, id);
+			return ERR_DB_OP;
+		}
+		return ERR_DB_FILE;
+	}
+
+	off_t offset = id * sizeof(student_t);
+
+	if (lseek(fd, offset, SEEK_SET) == -1) {
+		printf(M_ERR_DB_WRITE);
+		return ERR_DB_FILE;
+	}
+
+	student_t empty = {0};
+	ssize_t bytes_written = write(fd, &empty, sizeof(student_t));
+
+	if (bytes_written != sizeof(student_t)) {
+		printf(M_ERR_DB_WRITE);
+		return ERR_DB_FILE;
+	}
+
+	printf(M_STD_DEL_MSG, id);
+	return NO_ERROR;
 }
 
 /*
@@ -153,9 +258,39 @@ int del_student(int fd, int id)
  */
 int count_db_records(int fd)
 {
-    // TODO
-    printf(M_NOT_IMPL);
-    return NOT_IMPLEMENTED_YET;
+	if (fd < 0) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	if (lseek(fd, 0, SEEK_SET) == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	student_t student;
+	int count = 0;
+	ssize_t bytes_read;
+
+	while ((bytes_read = read(fd, &student, sizeof(student_t))) == sizeof(student_t)) {
+		if (student.id == 0) {
+			continue;
+		}
+		count++;
+	}
+
+	if (bytes_read == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	if (count == 0) {
+		printf(M_DB_EMPTY);
+	} else {
+		printf(M_DB_RECORD_CNT, count);
+	}
+
+	return count;
 }
 
 /*
@@ -193,9 +328,46 @@ int count_db_records(int fd)
  */
 int print_db(int fd)
 {
-    // TODO
-    printf(M_NOT_IMPL);
-    return NOT_IMPLEMENTED_YET;
+	if (fd < 0) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	if (lseek(fd, 0, SEEK_SET) == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	student_t student;
+	bool header_printed = false;
+	int record_count = 0;
+	ssize_t bytes_read;
+
+	while ((bytes_read = read(fd, &student, sizeof(student_t))) == sizeof(student_t)) {
+		if (student.id == 0) { // empty
+			continue;
+		}
+
+		if (!header_printed) {
+			printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA");
+			header_printed = true;
+		}
+
+		float real_gpa = student.gpa / 100.0;
+		printf(STUDENT_PRINT_FMT_STRING, student.id, student.fname, student.lname, real_gpa);
+		record_count++;
+	}
+
+	if (bytes_read == -1) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	if (record_count == 0) {
+		printf(M_DB_EMPTY);
+	}
+
+	return NO_ERROR;
 }
 
 /*
@@ -228,8 +400,14 @@ int print_db(int fd)
  */
 void print_student(student_t *s)
 {
-    // TODO
-    printf(M_NOT_IMPL);
+    if (s == NULL || s->id == 0) {
+        printf(M_ERR_STD_PRINT);
+        return;
+    }
+
+    printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA");
+    float real_gpa = s->gpa / 100.0;
+    printf(STUDENT_PRINT_FMT_STRING, s->id, s->fname, s->lname, real_gpa);
 }
 
 /*
@@ -282,9 +460,61 @@ void print_student(student_t *s)
  */
 int compress_db(int fd)
 {
-    // TODO
-    printf(M_NOT_IMPL);
-    return fd;
+	if (fd < 0) {
+		printf(M_ERR_DB_READ);
+		return ERR_DB_FILE;
+	}
+
+	int tmp_fd = open(TMP_DB_FILE, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	if (tmp_fd < 0) {
+		printf(M_ERR_DB_OPEN);
+		return ERR_DB_FILE;
+	}
+
+	if (lseek(fd, 0, SEEK_SET) == -1) {
+		printf(M_ERR_DB_READ);
+		close(tmp_fd);
+		return ERR_DB_FILE;
+	}
+
+	student_t student;
+	ssize_t bytes_read;
+	off_t write_offset = 0;
+
+	while ((bytes_read = read(fd, &student, sizeof(student_t))) == sizeof(student_t)) {
+		if (student.id == 0) {
+			continue;
+		}
+
+		if (write(tmp_fd, &student, sizeof(student_t)) != sizeof(student_t)) {
+			printf(M_ERR_DB_WRITE);
+			close(tmp_fd);
+			return ERR_DB_FILE;
+		}
+	}
+
+	if (bytes_read == -1) {
+		printf(M_ERR_DB_READ);
+		close(tmp_fd);
+		return ERR_DB_FILE;
+	}
+
+	close(fd);
+	close(tmp_fd);
+
+	if (rename(TMP_DB_FILE, DB_FILE) != 0) {
+		printf(M_ERR_DB_CREATE);
+		return ERR_DB_FILE;
+	}
+
+	fd = open_db(DB_FILE, false);
+	if (fd < 0) {
+		printf(M_ERR_DB_OPEN);
+		return ERR_DB_FILE;
+	}
+
+	printf(M_DB_COMPRESSED_OK);
+	return fd;
 }
 
 /*

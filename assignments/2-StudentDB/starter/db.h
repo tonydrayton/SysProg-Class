@@ -11,7 +11,7 @@ typedef struct student{
     int id;
     char fname[24];
     char lname[32];
-    int gpa; 
+    int gpa;
 } student_t;
 
 //Define limits for sudent ids and allowable GPA ranges.  Note GPA values will
@@ -23,7 +23,7 @@ typedef struct student{
 #define MAX_STD_GPA     500
 
 //some useful constants you should consider using versus hard coding
-//in your program. 
+//in your program.
 static const student_t EMPTY_STUDENT_RECORD = {0};
 static const int STUDENT_RECORD_SIZE  = sizeof(struct student);
 static const int DELETED_STUDENT_ID = 0;
