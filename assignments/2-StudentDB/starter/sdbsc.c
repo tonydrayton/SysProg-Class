@@ -349,7 +349,7 @@ int print_db(int fd)
 		}
 
 		if (!header_printed) {
-			printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA");
+			printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST_NAME", "LAST_NAME", "GPA");
 			header_printed = true;
 		}
 
@@ -479,11 +479,17 @@ int compress_db(int fd)
 
 	student_t student;
 	ssize_t bytes_read;
-	off_t write_offset = 0;
 
 	while ((bytes_read = read(fd, &student, sizeof(student_t))) == sizeof(student_t)) {
 		if (student.id == 0) {
 			continue;
+		}
+
+		off_t offset = student.id * sizeof(student_t);
+		if (lseek(tmp_fd, offset, SEEK_SET) == -1) {
+			printf(M_ERR_DB_WRITE);
+			close(tmp_fd);
+			return ERR_DB_FILE;
 		}
 
 		if (write(tmp_fd, &student, sizeof(student_t)) != sizeof(student_t)) {
