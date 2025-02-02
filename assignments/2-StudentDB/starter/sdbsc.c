@@ -197,7 +197,7 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
  */
 int del_student(int fd, int id)
 {
-	if (fd < 0 || id < 0) {
+	if (fd < 0) {
 		printf(M_ERR_DB_READ);
 		return ERR_DB_FILE;
 	}
