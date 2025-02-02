@@ -164,20 +164,6 @@ setup_file() {
     }
 }
 
-#if you implemented the compress db function remove the
-#skip from the tests below
-
-#@test "Double check storage at this point" {
-#    run du -h ./student.db
-#    [ "$status" -eq 0 ]
-#    #note du -h puts a tab between the 2 fields need to match on that
-#    [ "$output" = "12K$(echo -e '\t')./student.db" ] || {
-#        echo "Failed Output:  $output"
-#        echo "12K     ./student.db"
-#        return 1
-#    }
-#}
-
 @test "Compress db - try 1" {
     run ./sdbsc -x
     [ "$status" -eq 0 ]
