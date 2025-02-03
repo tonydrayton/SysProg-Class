@@ -33,11 +33,9 @@ void* thread_function(void* arg) {
     int local_i;
     
     for (int i = 0; i < MAX_COUNT; i++) {
-        pthread_mutex_lock(&mutex);
         local_i = shared_counter;
         local_i++;
         shared_counter = local_i;
-        pthread_mutex_unlock(&mutex);
     }
     
     printf("Thread %d: Finished execution\n", data->thread_id);
