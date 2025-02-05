@@ -38,7 +38,6 @@ unsigned long get_task_id(){
 // Thread function
 void* thread_function(void* arg) {
     thread_data_t* data = (thread_data_t*)arg;
-    int local_i;
     unsigned long task_id = get_task_id();
     
     for (int i = 0; i < MAX_COUNT; i++) {
@@ -77,6 +76,7 @@ int main() {
     printf("sleeping for 5 seconds\n");
     sleep(5);
     printf("Main: Program completed\n");
+    printf("Everything should be gone for pid=%d\n", getpid());
     
     return 0;
 }
