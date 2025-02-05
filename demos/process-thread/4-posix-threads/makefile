@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 # Source files
-SOURCES = thread-demo thread-rc thread-coordination
+SOURCES = thread-demo thread-rc thread-coordination thread-parent-child
 
 # Executable names
 EXECUTABLES = $(SOURCES:.c=)
