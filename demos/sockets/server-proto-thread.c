@@ -3,7 +3,7 @@
  *
  */
  
-#include "server3.h"
+#include "server-proto-thread.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -15,12 +15,43 @@
 #include <sys/un.h>
 #include <pthread.h>
 
-#define BUFF_SZ 512
+#include "protocol.h"
+
 
 #define PORT_NUM    1090
 
 
 
+int build_rsp_from_req(proto_msg_t *req_message, proto_msg_t *rsp_msg){
+    uint8_t *req_payload, *rsp_payload;
+
+    rsp_msg->proto_header.proto_id = req_message->proto_header.proto_id;
+    rsp_msg->proto_header.proto_ver = req_message->proto_header.proto_ver;
+    rsp_msg->proto_header.proto_work_sim = req_message->proto_header.proto_work_sim;
+    rsp_msg->proto_header.msg_dir = PROTO_DIR_RSP;
+
+    req_payload = req_message->payload;
+    rsp_payload = rsp_msg->payload;
+
+    int buff_len = snprintf((char *)rsp_payload, 
+                MAX_PAYLOAD_SZ, "ECHO:[%.*s]", 
+                req_message->proto_header.msg_len,
+                req_payload);
+
+    rsp_msg->proto_header.msg_len = buff_len;
+
+    return 0;
+}
+
+int simulate_useful_work(proto_msg_t *proto){
+    int sleep_time = proto->proto_header.proto_work_sim;
+
+    //For now our useful work will just be sleeping
+    printf("\t  simulating some useful work - sleeping %d seconds...\n", sleep_time);
+    sleep(sleep_time);
+    printf("\t  done useful work simulation\n");
+    return OK;
+}
 
 /*
  * This function processes individual requests in threads
@@ -28,10 +59,12 @@
 void *connection_handler(void *socket_handle){
     int sock = *((int *)socket_handle);
     int ret;
+    proto_msg_t *send_message;
+    uint16_t send_len;
     
     // some thread local buffers for the messages - this has to be local to the thread
-    uint8_t send_buffer[BUFF_SZ] = {0};
-    uint8_t recv_buffer[BUFF_SZ] = {0};
+    uint8_t send_buffer[MAX_MSG_BUFF] = {0};
+    uint8_t recv_buffer[MAX_MSG_BUFF] = {0};
 
     printf("\t\tHello from socket handler thread\n");
     ret = recv(sock, recv_buffer, sizeof(recv_buffer),0);
@@ -39,16 +72,16 @@ void *connection_handler(void *socket_handle){
             perror("read error");
             exit(EXIT_FAILURE);
         }
-        if (*recv_buffer == 'A')
-            sleep(0);
-        else
-            sleep(15);
+        
+        //SIMULATE ANY WORK HERE
+        simulate_useful_work((proto_msg_t *)recv_buffer);
  
-        int buff_len = snprintf((char *)send_buffer, 
-            sizeof(send_buffer), "THANK YOU -> %s", recv_buffer);
+        send_message = (proto_msg_t *)send_buffer;
+        build_rsp_from_req((proto_msg_t *)recv_buffer, send_message);
+        send_len = get_msg_len(send_message);
 
         //now string out buffer has the length
-        send (sock, send_buffer, buff_len, 0);
+        send (sock, send_buffer, send_len, 0);
         close(sock);
 
         return 0;
@@ -102,6 +135,14 @@ static void start_server(){
         exit(EXIT_FAILURE);
     }
 
+    /*
+     * NOTE this is good for development as sometimes port numbers
+     * get held up, this forces the port to be bound, do not use
+     * in a real application
+     */
+    int enable=1;
+    setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+    
     /* Bind socket to socket name. */
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);

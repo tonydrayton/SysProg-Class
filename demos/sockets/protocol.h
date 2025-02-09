@@ -15,6 +15,7 @@
 typedef struct proto_header {
     uint16_t  proto_id;
     uint16_t  proto_ver;
+    uint16_t  proto_work_sim;
     uint16_t  msg_dir;
     uint16_t  msg_len;
 }proto_header_t;
@@ -42,5 +43,5 @@ proto_msg_t *build_msg(uint8_t *data, uint16_t len,
               uint8_t *msg_buff, uint16_t msg_buff_len);
 
 proto_msg_t  *extract_msg(uint8_t *raw_buff, uint16_t buff_len);
-
 uint16_t get_msg_len(proto_msg_t *);
+void print_proto_msg(char *from, proto_msg_t *msg);

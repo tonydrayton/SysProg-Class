@@ -58,3 +58,30 @@ uint16_t get_msg_len(proto_msg_t *msg){
     return msg->proto_header.msg_len + 
         (uint16_t)sizeof(proto_header_t);
 }
+
+void print_proto_msg(char *from, proto_msg_t *msg){
+    printf("Debug Label: %s.  PROTOCOL INFORMATION:\n", from);
+    printf("\t       ID: %d\n",msg->proto_header.proto_id);
+    printf("\t  Version: %d\n",msg->proto_header.proto_ver);
+    
+    if (msg->proto_header.proto_id == PROTO_IDENTITY){
+        printf("\t     Name: CLASS_ECHO_PROTOCOL\n");      
+    }
+    printf("\t  Version: %d\n",msg->proto_header.proto_ver);
+    printf("\t Sim Work: %d seconds\n",msg->proto_header.proto_work_sim);
+    printf("\t   Length: %d bytes\n",msg->proto_header.msg_len);
+    
+    switch(msg->proto_header.msg_dir){
+        case PROTO_DIR_REQ:
+            printf("\tDirection: %d - REQUEST\n",msg->proto_header.msg_dir);
+            break;
+        case PROTO_DIR_RSP:
+            printf("\tDirection: %d - RESPONSE\n",msg->proto_header.msg_dir);
+            break;
+        default:
+            printf("\tDirection: %d - UNKNOWN\n",msg->proto_header.msg_dir);
+            break;
+    }
+    printf("PAYLOAD\n-------\n");
+    printf("%.*s\n\n", msg->proto_header.msg_len, msg->payload);
+}

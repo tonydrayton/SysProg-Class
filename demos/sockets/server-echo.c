@@ -3,7 +3,7 @@
  *
  */
  
-#include "server1.h"
+#include "server-echo.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -14,37 +14,14 @@
 #include <unistd.h>
 #include <sys/un.h>
 
-#include "protocol.h"
-
+#define BUFF_SZ 512
 
 #define PORT_NUM    1090
 
-static uint8_t send_buffer[MAX_MSG_BUFF];
-static uint8_t recv_buffer[MAX_MSG_BUFF];
+static uint8_t send_buffer[BUFF_SZ];
+static uint8_t recv_buffer[BUFF_SZ];
 
 
-int build_rsp_from_req(proto_msg_t *req_message, proto_msg_t *rsp_msg){
-    uint8_t *req_payload, *rsp_payload;
-
-    rsp_msg->proto_header.proto_id = req_message->proto_header.proto_id;
-    rsp_msg->proto_header.proto_ver = req_message->proto_header.proto_ver;
-    rsp_msg->proto_header.msg_dir = PROTO_DIR_RSP;
-
-    req_payload = req_message->payload;
-    rsp_payload = rsp_msg->payload;
-
-    size_t payload_sz_max = sizeof(send_buffer) - 
-                sizeof(proto_header_t);
-
-    int buff_len = snprintf((char *)rsp_payload, 
-                payload_sz_max, "ECHO:[%.*s]", 
-                req_message->proto_header.msg_len,
-                req_payload);
-
-    rsp_msg->proto_header.msg_len = buff_len;
-    
-    return 0;
-}
 /*
  *  This function accepts a socket and processes requests from clients
  *  the server runs until stopped manually with a CTRL+C
@@ -80,7 +57,6 @@ static void process_requests(int listen_socket){
 
         //now string out buffer has the length
         send (data_socket, send_buffer, buff_len, 0);
-
         close(data_socket);
     }
 }
@@ -102,6 +78,14 @@ static void start_server(){
         perror("socket");
         exit(EXIT_FAILURE);
     }
+
+    /*
+     * NOTE this is good for development as sometimes port numbers
+     * get held up, this forces the port to be bound, do not use
+     * in a real application
+     */
+    int enable=1;
+    setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
     /* Bind socket to socket name. */
     addr.sin_family = AF_INET;

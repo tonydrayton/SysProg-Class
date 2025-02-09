@@ -1,5 +1,5 @@
 
-#include "client1.h"
+#include "client-echo.h"
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -63,7 +63,7 @@ static void start_client(uint8_t *packet){
         exit(EXIT_FAILURE);
     }
 
-    ret = send(data_socket, packet, strlen(packet), 0);
+    ret = send(data_socket, packet, strlen((char *)packet), 0);
     if (ret == -1) {
         perror("header write error");
         exit(EXIT_FAILURE);
@@ -85,13 +85,10 @@ static void start_client(uint8_t *packet){
 
 int main(int argc, char *argv[])
 {
-    strcpy(send_buffer, "DEFAULT TEXT");
+    strcpy((char *)send_buffer, "DEFAULT TEXT");
 
     if (argc == 2)
-        strcpy(send_buffer, argv[1]);
-
-    //append an EOF character, we will use this in server 2
-    strncat(send_buffer, EOF_CHAR_STR, 2);
+        strcpy((char *)send_buffer, argv[1]);
 
     //start the client
     start_client( send_buffer);

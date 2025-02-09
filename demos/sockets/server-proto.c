@@ -3,28 +3,56 @@
  *
  */
  
-#include "server2.h"
+#include "server-proto-thread.h"
 
 #include <sys/socket.h>
-#include <stdint.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/un.h>
 
 #include "protocol.h"
 
-#define BUFF_SZ 512
-#define EOF_CHAR '\x05'   //CTRL+D is EOF in general ASCII 5
 
 #define PORT_NUM    1090
 
+static uint8_t send_buffer[MAX_MSG_BUFF];
+static uint8_t recv_buffer[MAX_MSG_BUFF];
 
-static uint8_t send_buffer[BUFF_SZ];
-static uint8_t recv_buffer[BUFF_SZ];
 
+int build_rsp_from_req(proto_msg_t *req_message, proto_msg_t *rsp_msg){
+    uint8_t *req_payload, *rsp_payload;
+
+    rsp_msg->proto_header.proto_id = req_message->proto_header.proto_id;
+    rsp_msg->proto_header.proto_ver = req_message->proto_header.proto_ver;
+    rsp_msg->proto_header.proto_work_sim = req_message->proto_header.proto_work_sim;
+    rsp_msg->proto_header.msg_dir = PROTO_DIR_RSP;
+
+    req_payload = req_message->payload;
+    rsp_payload = rsp_msg->payload;
+
+    int buff_len = snprintf((char *)rsp_payload, 
+                MAX_PAYLOAD_SZ, "ECHO:[%.*s]", 
+                req_message->proto_header.msg_len,
+                req_payload);
+
+    rsp_msg->proto_header.msg_len = buff_len;
+
+    return 0;
+}
+
+int simulate_useful_work(proto_msg_t *proto){
+    int sleep_time = proto->proto_header.proto_work_sim;
+
+    //For now our useful work will just be sleeping
+    printf("\t  simulating some useful work - sleeping %d seconds...\n", sleep_time);
+    sleep(sleep_time);
+    printf("\t  done useful work simulation\n");
+    return OK;
+}
 
 /*
  *  This function accepts a socket and processes requests from clients
@@ -33,6 +61,8 @@ static uint8_t recv_buffer[BUFF_SZ];
 static void process_requests(int listen_socket){
     int data_socket;
     int ret;
+    proto_msg_t *send_message;
+    uint16_t send_len;
 
     //again, not the best approach, need ctrl-c to exit
     while(1){
@@ -49,39 +79,23 @@ static void process_requests(int listen_socket){
 
         printf("\t RECEIVED REQ...\n");
 
-        uint8_t small_buff[8];
-        uint16_t buffer_offset = 0;
-
         /* Wait for next data packet. */
-        while ((ret = recv(data_socket, small_buff, sizeof(small_buff),0)) > 0){
-            if ((buffer_offset + ret) > (int)sizeof(recv_buffer)){
-                //overflow condition, just ignore the extra
-                break;
-                // char zz = MSG_EOF;
-            }
-            printf("\t\tRead %d bytes\n", ret);
-            memcpy((recv_buffer + buffer_offset), small_buff, ret);
-            buffer_offset += ret;   //point to next read start point
-
-            //See if we hit the end of the buffer
-            if (small_buff[ret-1] == EOF_CHAR)
-                break;
-        }
+        ret = recv(data_socket, recv_buffer, sizeof(recv_buffer),0);
         if (ret == -1) {
             perror("read error");
             exit(EXIT_FAILURE);
         }
 
-        if (*recv_buffer == 'A')
-            sleep(0);
-        else
-            sleep(15);
- 
-        int buff_len = snprintf((char *)send_buffer, 
-            sizeof(send_buffer), "THANK YOU -> %s", recv_buffer);
+        //SIMULATE ANY WORK HERE
+        simulate_useful_work((proto_msg_t *)recv_buffer);
+
+        send_message = (proto_msg_t *)send_buffer;
+        build_rsp_from_req((proto_msg_t *)recv_buffer, send_message);
+        send_len = get_msg_len(send_message);
 
         //now string out buffer has the length
-        send (data_socket, send_buffer, buff_len, 0);
+        send (data_socket, send_message, send_len, 0);
+
         close(data_socket);
     }
 }
@@ -104,6 +118,14 @@ static void start_server(){
         exit(EXIT_FAILURE);
     }
 
+    /*
+     * NOTE this is good for development as sometimes port numbers
+     * get held up, this forces the port to be bound, do not use
+     * in a real application
+     */
+    int enable=1;
+    setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+    
     /* Bind socket to socket name. */
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
