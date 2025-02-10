@@ -185,7 +185,7 @@ This assignment will be weighted 50 points.
 - 5 points:  Code quality (how easy is your solution to follow)
 - 15 points: Answering the written questions: [questions.md](./questions.md)
 - 15 points: Quality and breadth of BATS unit tests
-- 10 points:  [EXTRA CREDIT] TODO
+- 10 points:  [EXTRA CREDIT] handle return codes for execvp
 
 Total points achievable is 70/60. 
 
