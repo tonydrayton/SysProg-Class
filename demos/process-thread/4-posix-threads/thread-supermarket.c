@@ -32,7 +32,6 @@ void* customer(void* arg) {
     int id = *(int*)arg;
 
     printf("Customer %d is waiting for a register...\n", id);
-    fflush(stdout);
 
     // Wait for an available checkout line
     sem_wait(&checkout_lines);
@@ -41,7 +40,6 @@ void* customer(void* arg) {
     int reg_id = get_register();
 
     printf("Customer %d is checking out at register %d.\n", id, reg_id);
-    fflush(stdout);
     
     sleep(rand() % 3 + 1);  // Simulate checkout time
 
