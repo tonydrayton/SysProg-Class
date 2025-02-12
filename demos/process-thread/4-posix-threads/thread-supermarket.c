@@ -36,18 +36,17 @@ void* customer(void* arg) {
     // Wait for an available checkout line
     sem_wait(&checkout_lines);
 
-    // Safely assign a register
-    int reg_id = get_register();
+        // Safely assign a register
+        int reg_id = get_register();
 
-    printf("Customer %d is checking out at register %d.\n", id, reg_id);
-    
-    sleep(rand() % 3 + 1);  // Simulate checkout time
+        printf("Customer %d is checking out at register %d.\n", id, reg_id);
+        
+        sleep(rand() % 3 + 1);  // Simulate checkout time
 
-    printf("Customer %d has finished at register %d.\n", id, reg_id);
-    fflush(stdout);
+        printf("Customer %d has finished at register %d.\n", id, reg_id);
 
-    // Release the register for the next customer
-    release_register(reg_id);
+        // Release the register for the next customer
+        release_register(reg_id);
 
     // Signal that a checkout line is available
     sem_post(&checkout_lines);
