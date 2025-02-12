@@ -46,7 +46,11 @@
  */
 int main()
 {
-	char cmd_buff[SH_CMD_MAX];
+	char *cmd_buff = malloc(SH_CMD_MAX);
+	if (!cmd_buff) {
+		fprintf(stderr, "Failed to allocate command buffer\n");
+		exit(1);
+	}
 	int rc = 0;
 	command_list_t clist;
 
@@ -61,7 +65,11 @@ int main()
 
 		//IMPLEMENT THE REST OF THE REQUIREMENTS
 		if (strcmp(cmd_buff, EXIT_CMD) == 0) {
+			free(cmd_buff);
 			exit(0);
+		} else if (strcmp(cmd_buff, DRAGON_CMD) == 0) {
+			printf("%s", DRAGON_ART);
+			continue;
 		}
 
 		rc = build_cmd_list(cmd_buff, &clist);
@@ -83,6 +91,6 @@ int main()
 		}
 	}
 
-	printf(M_NOT_IMPL);
-	exit(EXIT_NOT_IMPL);
+	free(cmd_buff);
+	return 0;
 }

@@ -34,38 +34,60 @@
  */
 int build_cmd_list(char *cmd_line, command_list_t *clist)
 {
-    memset(clist, 0, sizeof(command_list_t));
+	memset(clist, 0, sizeof(command_list_t));
 	if(strlen(cmd_line) == 0) {
 		return WARN_NO_CMDS;
 	}
 
-	char *cmd_string = strtok(cmd_line, PIPE_STRING);
+	char pipe_copy[SH_CMD_MAX];
+	strcpy(pipe_copy, cmd_line);
+
+	char *saveptr1;
+	char *cmd_string = strtok_r(pipe_copy, PIPE_STRING, &saveptr1);
 	while(cmd_string != NULL) {
 		if(clist->num >= CMD_MAX) {
 			return ERR_TOO_MANY_COMMANDS;
 		}
 
-		while(*cmd_string == SPACE_CHAR) cmd_string++;
+		char cmd_copy[SH_CMD_MAX];
+		char *cmd_ptr = cmd_copy;
+		strcpy(cmd_copy, cmd_string);
 
-		char *token = strtok(cmd_string, " ");
-		if(token) {
-			if(strlen(token) >= EXE_MAX) {
-				return ERR_CMD_OR_ARGS_TOO_BIG;
-			}
-			strcpy(clist->commands[clist->num].exe, token);
-			char arg_buff[ARG_MAX] = "";
-			token = strtok(NULL, "");
+		// leading space skipping
+		while(isspace(*cmd_ptr)) cmd_ptr++;
+
+		// trailing space skipping
+		char *end = cmd_ptr + strlen(cmd_ptr) - 1;
+		while(end > cmd_ptr && isspace(*end)) {
+			*end = '\0';
+			end--;
+		}
+
+		if(strlen(cmd_ptr) > 0) {
+			char *saveptr2;
+			char *token = strtok_r(cmd_ptr, " ", &saveptr2);
 			if(token) {
-				while(*token == SPACE_CHAR) token++;
-				if(strlen(token) >= ARG_MAX) {
+				if(strlen(token) >= EXE_MAX) {
 					return ERR_CMD_OR_ARGS_TOO_BIG;
 				}
-				strcpy(clist->commands[clist->num].args, token);
+				strcpy(clist->commands[clist->num].exe, token);
+				token = strtok_r(NULL, "", &saveptr2);
+				if(token) {
+					while(isspace(*token)) token++;
+					if(strlen(token) >= ARG_MAX) {
+						return ERR_CMD_OR_ARGS_TOO_BIG;
+					}
+					strcpy(clist->commands[clist->num].args, token);
+				}
+				clist->num++;
 			}
 		}
 
-		clist->num++;
-		cmd_string = strtok(NULL, PIPE_STRING);
+		cmd_string = strtok_r(NULL, PIPE_STRING, &saveptr1); // next command
+	}
+
+	if(clist->num == 0) {
+		return WARN_NO_CMDS;
 	}
 
 	return OK;
