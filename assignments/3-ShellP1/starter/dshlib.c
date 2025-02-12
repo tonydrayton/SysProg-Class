@@ -34,6 +34,39 @@
  */
 int build_cmd_list(char *cmd_line, command_list_t *clist)
 {
-    printf(M_NOT_IMPL);
-    return EXIT_NOT_IMPL;
+    memset(clist, 0, sizeof(command_list_t));
+	if(strlen(cmd_line) == 0) {
+		return WARN_NO_CMDS;
+	}
+
+	char *cmd_string = strtok(cmd_line, PIPE_STRING);
+	while(cmd_string != NULL) {
+		if(clist->num >= CMD_MAX) {
+			return ERR_TOO_MANY_COMMANDS;
+		}
+
+		while(*cmd_string == SPACE_CHAR) cmd_string++;
+
+		char *token = strtok(cmd_string, " ");
+		if(token) {
+			if(strlen(token) >= EXE_MAX) {
+				return ERR_CMD_OR_ARGS_TOO_BIG;
+			}
+			strcpy(clist->commands[clist->num].exe, token);
+			char arg_buff[ARG_MAX] = "";
+			token = strtok(NULL, "");
+			if(token) {
+				while(*token == SPACE_CHAR) token++;
+				if(strlen(token) >= ARG_MAX) {
+					return ERR_CMD_OR_ARGS_TOO_BIG;
+				}
+				strcpy(clist->commands[clist->num].args, token);
+			}
+		}
+
+		clist->num++;
+		cmd_string = strtok(NULL, PIPE_STRING);
+	}
+
+	return OK;
 }
