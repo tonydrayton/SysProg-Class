@@ -16,7 +16,7 @@ static void my_wise_guy_signal_handler(int sig_num){
 int main(){
 
     unsigned long counter = 0;
-
+    
     //custom SIGINT (CTRL+C) signal
     signal(SIGINT, my_wise_guy_signal_handler);
 
