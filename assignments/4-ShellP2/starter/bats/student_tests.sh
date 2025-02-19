@@ -100,3 +100,97 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" =~ "hello" ]]
 }
+
+@test "cd .. works correctly" {
+    current=$(pwd)
+    parent=$(dirname "$current")
+
+    run "${DIR}/../dsh" <<EOF
+cd ..
+pwd
+EOF
+    [ "$status" -eq 0 ]
+    stripped_output=$(echo "$output" | tr -d '[:space:]')
+    expected_output="${parent}dsh2>dsh2>dsh2>cmdloopreturned0"
+    [ "$stripped_output" = "$expected_output" ]
+}
+
+@test "cd with multiple dots" {
+    run "${DIR}/../dsh" <<EOF
+cd ....
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "cd: No such file or directory" ]]
+}
+
+@test "cd with special characters" {
+    run "${DIR}/../dsh" <<EOF
+cd /tmp/!@#$%^
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "cd: No such file or directory" ]]
+}
+
+@test "cd with very long path" {
+    long_path=$(printf 'a%.0s' {1..1000})
+    run "${DIR}/../dsh" <<EOF
+cd $long_path
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "cd: No such file or directory" ]]
+}
+
+@test "cd with spaces in path" {
+    current=$(pwd)
+    mkdir -p "${current}/test dir with spaces"
+
+    run "${DIR}/../dsh" <<EOF
+cd "test dir with spaces"
+pwd
+cd ..
+EOF
+
+    rmdir "${current}/test dir with spaces"
+    [ "$status" -eq 0 ]
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+    [[ "$stripped_output" =~ "${current}/test dir with spaces" ]]
+}
+
+@test "cd with multiple slashes" {
+    run "${DIR}/../dsh" <<EOF
+cd ///tmp////
+pwd
+EOF
+    [ "$status" -eq 0 ]
+    stripped_output=$(echo "$output" | tr -d '[:space:]')
+    expected_output="/tmpdsh2>dsh2>dsh2>cmdloopreturned0"
+    [ "$stripped_output" = "$expected_output" ]
+}
+
+@test "cd with relative paths" {
+    current=$(pwd)
+    mkdir -p "${current}/test_dir/subdir"
+
+    run "${DIR}/../dsh" <<EOF
+cd test_dir/subdir
+pwd
+cd ../..
+EOF
+
+    rmdir "${current}/test_dir/subdir"
+    rmdir "${current}/test_dir"
+    [ "$status" -eq 0 ]
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+    [[ "$stripped_output" =~ "${current}/test_dir/subdir" ]]
+}
+
+@test "cd with dot-dot path traversal attempt" {
+    run "${DIR}/../dsh" <<EOF
+cd ../../../../../../../tmp
+pwd
+EOF
+    [ "$status" -eq 0 ]
+    stripped_output=$(echo "$output" | tr -d '[:space:]')
+    expected_output="/tmpdsh2>dsh2>dsh2>cmdloopreturned0"
+    [ "$stripped_output" = "$expected_output" ]
+}
