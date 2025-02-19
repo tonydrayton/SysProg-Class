@@ -40,14 +40,14 @@
 7. What changes did you make to your parsing logic compared to the previous assignment? Were there any unexpected challenges in refactoring your old code?
 
     > **Answer**: The main changes I made to my parsing logic were:
-    - Changed from pipe-separated command parsing to single command argv-style parsing
-    - Added support for quoted arguments using `in_quote`
-    - Implemented a new command buffer structure (cmd_buff_t)
-    - Changed from separate exe/args strings to an argv array format
+    > - Changed from pipe-separated command parsing to single command argv-style parsing
+    >- Added support for quoted arguments using `in_quote`
+    > - Implemented a new command buffer structure (cmd_buff_t)
+    > - Changed from separate exe/args strings to an argv array format
 
-    The unexpected challenges were:
-    - Handling edge cases with quotes and spaces
-    - Converting from the previous assignment's arg separation to the new argv format
+    > The unexpected challenges were:
+    > - Handling edge cases with quotes and spaces
+    > - Converting from the previous assignment's arg separation to the new argv format
 
 8. For this quesiton, you need to do some research on Linux signals. You can use [this google search](https://www.google.com/search?q=Linux+signals+overview+site%3Aman7.org+OR+site%3Alinux.die.net+OR+site%3Atldp.org&oq=Linux+signals+overview+site%3Aman7.org+OR+site%3Alinux.die.net+OR+site%3Atldp.org&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBBzc2MGowajeoAgCwAgA&sourceid=chrome&ie=UTF-8) to get started.
 
