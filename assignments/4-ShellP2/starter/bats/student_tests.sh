@@ -62,14 +62,6 @@ EOF
     [ "$stripped_output" = "$expected_output" ]
 }
 
-@test "invalid command shows error" {
-    run "${DIR}/../dsh" <<EOF
-nonexistentcommand
-EOF
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "execvp" ]]
-}
-
 @test "empty input shows warning" {
     run "${DIR}/../dsh" <<EOF
 
@@ -193,4 +185,23 @@ EOF
     stripped_output=$(echo "$output" | tr -d '[:space:]')
     expected_output="/tmpdsh2>dsh2>dsh2>cmdloopreturned0"
     [ "$stripped_output" = "$expected_output" ]
+}
+
+@test "extra credit: return codes" {
+    run "${DIR}/../dsh" <<EOF
+blahblahblahcommand
+rc
+exit
+EOF
+    [[ "$output" =~ "Command not found in PATH" ]]
+    [[ "$output" =~ "2" ]]
+
+    # Test cd error
+    run "${DIR}/../dsh" <<EOF
+cd /nonexistent
+rc
+exit
+EOF
+    [[ "$output" =~ "No such file or directory" ]]
+    [[ "$output" =~ "2" ]]
 }

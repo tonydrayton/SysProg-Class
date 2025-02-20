@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <errno.h>
 #include "dshlib.h"
 
 /*
@@ -56,6 +57,7 @@ int exec_local_cmd_loop()
     char *cmd_buff = malloc(SH_CMD_MAX);
     int rc = 0;
     cmd_buff_t cmd;
+    int last_return_code = 0;
 
     if (!cmd_buff) {
         return ERR_MEMORY;
@@ -97,22 +99,47 @@ int exec_local_cmd_loop()
                 if (cmd.argc > 1) {
                     if (chdir(cmd.argv[1]) != 0) {
                         perror("cd");
+                        last_return_code = errno;
+                    } else {
+                        last_return_code = 0;
                     }
                 }
+                continue;
+            } else if (strcmp(cmd.argv[0], "rc") == 0) {
+                printf("%d\n", last_return_code);
                 continue;
             }
 
             pid_t pid = fork();
             if (pid < 0) {
                 perror("fork");
+                last_return_code = errno;
                 continue;
             } else if (pid == 0) {
                 execvp(cmd.argv[0], cmd.argv);
-                perror("execvp");
-                exit(ERR_EXEC_CMD);
+
+                switch (errno) {
+                    case ENOENT:
+                        fprintf(stderr, "Command not found in PATH\n");
+                        exit(2);
+                    case EACCES:
+                        fprintf(stderr, "Permission denied\n");
+                        exit(13);
+                    case ENOEXEC:
+                        fprintf(stderr, "Not an executable file\n");
+                        exit(126);
+                    default:
+                        perror("Command execution failed");
+                        exit(errno);
+                }
             } else {
                 int status;
                 waitpid(pid, &status, 0);
+                if (WIFEXITED(status)) {
+                    last_return_code = WEXITSTATUS(status);
+                } else if (WIFSIGNALED(status)) {
+                    last_return_code = 128 + WTERMSIG(status);
+                }
             }
         }
     }
