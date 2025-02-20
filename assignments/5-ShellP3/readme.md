@@ -123,8 +123,6 @@ dsh3>
 
 #### Grading Rubric
 
-This assignment will be weighted 50 points.
-
 - 50 points: Correct implementation of required functionality
 - 5 points:  Code quality (how easy is your solution to follow)
 - 10 points: Answering the written questions: [questions.md](./questions.md)
