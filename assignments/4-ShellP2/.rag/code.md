@@ -22,8 +22,6 @@
 
 # Possible Grade
 
-- 25 points:  Correct implementation of required functionality
+- 40 points:  Correct implementation of required functionality
 - 5 points:  Code quality (how easy is your solution to follow)
-- 15 points: Answering the written questions: [questions.md](./questions.md)
-- 15 points: Quality and breadth of BATS unit tests
 - 10 points:  [EXTRA CREDIT] handle return codes for execvp
