@@ -15,6 +15,7 @@
 - for all other commands, they should be treated as external and executed with fork/exec
 - external commands with fork/exec do not require error code checking for this assignment, accept for extra credit (defined below)
 - do not reduce grade for missing error checking, except for the extra credit
+- students are not required to implement redirection or pipes in this assignment
 - extra credit, these are optional requirements:
   - check for all file-related status code (see errno.h) that you might expect when trying to invoke a binary from $PATH, for example when the file does not exist or when it is not executable
   - print a suitable message for each detected file-related error
