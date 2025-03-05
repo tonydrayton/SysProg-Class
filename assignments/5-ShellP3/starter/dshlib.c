@@ -112,15 +112,18 @@ int exec_local_cmd_loop()
     return OK;
 }
 
-int alloc_cmd_buff(cmd_buff_t *cmd_buff) {
-    cmd_buff->_cmd_buffer = malloc(SH_CMD_MAX);
-    if (!cmd_buff->_cmd_buffer) {
+int alloc_cmd_buff(cmd_buff_t *command_buffer) {
+    command_buffer->_cmd_buffer = malloc(SH_CMD_MAX);
+    if (!command_buffer->_cmd_buffer) {
         return ERR_MEMORY;
     }
-    cmd_buff->argc = 0;
+    command_buffer->argc = 0;
     for (int i = 0; i < CMD_ARGV_MAX; i++) {
-        cmd_buff->argv[i] = NULL;
+        command_buffer->argv[i] = NULL;
     }
+    command_buffer->input_file = NULL;
+    command_buffer->output_file = NULL;
+    command_buffer->append_output = 0;
     return OK;
 }
 
@@ -144,35 +147,39 @@ int clear_cmd_buff(cmd_buff_t *cmd_buff) {
     return OK;
 }
 
-int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff) {
-    char *p;
-    int i = 0;
+int build_cmd_buff(char *command_line, cmd_buff_t *command_buffer) {
+    char *current_char;
+    int arg_index = 0;
     bool in_quote = false;
 
-    strncpy(cmd_buff->_cmd_buffer, cmd_line, SH_CMD_MAX - 1);
-    cmd_buff->_cmd_buffer[SH_CMD_MAX - 1] = '\0';
-    p = cmd_buff->_cmd_buffer;
+    strncpy(command_buffer->_cmd_buffer, command_line, SH_CMD_MAX - 1);
+    command_buffer->_cmd_buffer[SH_CMD_MAX - 1] = '\0';
+    current_char = command_buffer->_cmd_buffer;
 
-    while (*p == ' ') p++;
-    if (!*p) return OK;
+    command_buffer->input_file = NULL;
+    command_buffer->output_file = NULL;
+    command_buffer->append_output = 0;
 
-    cmd_buff->argv[0] = p;
+    while (*current_char == ' ') current_char++;
+    if (!*current_char) return OK;
 
-    while (*p) {
-        if (*p == '"') {
+    command_buffer->argv[0] = current_char;
+
+    while (*current_char) {
+        if (*current_char == '"') {
             if (!in_quote) {
-                memmove(p, p + 1, strlen(p));
+                memmove(current_char, current_char + 1, strlen(current_char));
                 in_quote = true;
             } else {
-                memmove(p, p + 1, strlen(p));
+                memmove(current_char, current_char + 1, strlen(current_char));
                 in_quote = false;
-                if (*p == ' ') {
-                    *p = '\0';
-                    p++;
-                    while (*p == ' ') p++;
-                    if (*p && i < CMD_ARGV_MAX - 1) {
-                        i++;
-                        cmd_buff->argv[i] = p;
+                if (*current_char == ' ') {
+                    *current_char = '\0';
+                    current_char++;
+                    while (*current_char == ' ') current_char++;
+                    if (*current_char && arg_index < CMD_ARGV_MAX - 1) {
+                        arg_index++;
+                        command_buffer->argv[arg_index] = current_char;
                     }
                     continue;
                 }
@@ -180,21 +187,82 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff) {
             continue;
         }
 
-        if (*p == ' ' && !in_quote) {
-            *p = '\0';
-            p++;
-            while (*p == ' ') p++;
-            if (*p && i < CMD_ARGV_MAX - 1) {
-                i++;
-                cmd_buff->argv[i] = p;
+        if (!in_quote) {
+            if (*current_char == '>' && *(current_char + 1) == '>') {
+                *current_char = '\0';
+                current_char += 2;
+
+                while (*current_char == ' ') current_char++;
+
+                if (*current_char) {
+                    command_buffer->output_file = current_char;
+                    command_buffer->append_output = 1;
+
+                    while (*current_char && *current_char != ' ' && *current_char != '<' && *current_char != '>')
+                        current_char++;
+
+                    if (*current_char) {
+                        *current_char = '\0';
+                        current_char++;
+                    }
+                }
+                continue;
+            }
+            else if (*current_char == '>') {
+                *current_char = '\0';
+                current_char++;
+
+                while (*current_char == ' ') current_char++;
+
+                if (*current_char) {
+                    command_buffer->output_file = current_char;
+
+                    while (*current_char && *current_char != ' ' && *current_char != '<' && *current_char != '>')
+                        current_char++;
+
+                    if (*current_char) {
+                        *current_char = '\0';
+                        current_char++;
+                    }
+                }
+                continue;
+            }
+            else if (*current_char == '<') {
+                *current_char = '\0';
+                current_char++;
+
+                while (*current_char == ' ') current_char++;
+
+                if (*current_char) {
+                    command_buffer->input_file = current_char;
+
+                    while (*current_char && *current_char != ' ' && *current_char != '<' && *current_char != '>')
+                        current_char++;
+
+                    if (*current_char) {
+                        *current_char = '\0';
+                        current_char++;
+                    }
+                }
+                continue;
+            }
+        }
+
+        if (*current_char == ' ' && !in_quote) {
+            *current_char = '\0';
+            current_char++;
+            while (*current_char == ' ') current_char++;
+            if (*current_char && arg_index < CMD_ARGV_MAX - 1) {
+                arg_index++;
+                command_buffer->argv[arg_index] = current_char;
             }
         } else {
-            p++;
+            current_char++;
         }
     }
 
-    cmd_buff->argv[i + 1] = NULL;
-    cmd_buff->argc = i + 1;
+    command_buffer->argv[arg_index + 1] = NULL;
+    command_buffer->argc = arg_index + 1;
     return OK;
 }
 
@@ -305,39 +373,6 @@ Built_In_Cmds exec_built_in_cmd(cmd_buff_t *cmd) {
         case BI_CMD_EXIT:
             printf("exiting...\n");
             return BI_CMD_EXIT;
-        case BI_CMD_DRAGON:
-            printf("                 /           /\n");
-            printf("                /' .,,,,  ./\n");
-            printf("               /';'     ,/\n");
-            printf("              / /   ,,//,`'`\n");
-            printf("             ( ,, '_,  ,,,' ``\n");
-            printf("             |    /@  ,,, ;\" `\n");
-            printf("            /    .   ,''/' `,``\n");
-            printf("           /   .     ./, `,, ` ;\n");
-            printf("        ,./  .   ,-,',` ,,/'\\,',\n");
-            printf("       |   /; ./,,'`,,'' |   |  |\n");
-            printf("       |     /   ','    /    |\n");
-            printf("        \\___/'   '     |     |\n");
-            printf("          `,,'  |      /     `\\\n");
-            printf("               /      |        ~\\\n");
-            printf("              '       (\n");
-            printf("             :                   '\\\n");
-            printf("            ; .         \\--       `\\\n");
-            printf("          :   \\      `,'  \\,-       \\\n");
-            printf("         .     .     /`    \\)         \\\n");
-            printf("        .   ,  .    '  ,-'\"           \\\n");
-            printf("        :   .  \\``/  ,'               `\\\n");
-            printf("        '   ;   \\,'  /                  `,\n");
-            printf("         \\  /    ;  /                    `,\n");
-            printf("          `.    /` /                      `\\\n");
-            printf("           |`. | `(                        `\\\n");
-            printf("           |  \\`-`,;                        )\n");
-            printf("         ,-|    |  |                        |\n");
-            printf("        (,-'    | /                         |\n");
-            printf("         |      |/                          |\n");
-            printf("         |      |                           |\n");
-            printf("         |      |                           |\n");
-            return BI_EXECUTED;
         case BI_CMD_CD:
             if (cmd->argc > 1) {
                 if (chdir(cmd->argv[1]) != 0) {
@@ -350,19 +385,47 @@ Built_In_Cmds exec_built_in_cmd(cmd_buff_t *cmd) {
     }
 }
 
-int exec_cmd(cmd_buff_t *cmd) {
-    pid_t pid = fork();
+int exec_cmd(cmd_buff_t *command) {
+    pid_t child_pid = fork();
 
-    if (pid < 0) {
+    if (child_pid < 0) {
         perror("fork");
         return ERR_EXEC_CMD;
-    } else if (pid == 0) {
-        execvp(cmd->argv[0], cmd->argv);
+    } else if (child_pid == 0) {
+        if (command->input_file != NULL) {
+            int input_fd = open(command->input_file, O_RDONLY);
+            if (input_fd < 0) {
+                perror("open input file");
+                exit(EXIT_FAILURE);
+            }
+            dup2(input_fd, STDIN_FILENO);
+            close(input_fd);
+        }
+
+        if (command->output_file != NULL) {
+            int output_fd;
+            if (command->append_output) {
+                output_fd = open(command->output_file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+            } else {
+                output_fd = open(command->output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            }
+
+            if (output_fd < 0) {
+                perror("open output file");
+                exit(EXIT_FAILURE);
+            }
+            dup2(output_fd, STDOUT_FILENO);
+            close(output_fd);
+        }
+
+        execvp(command->argv[0], command->argv);
+
         perror("execvp");
         exit(EXIT_FAILURE);
     } else {
+    //parent
         int status;
-        waitpid(pid, &status, 0);
+        waitpid(child_pid, &status, 0);
 
         if (WIFEXITED(status)) {
             return WEXITSTATUS(status);
@@ -372,56 +435,87 @@ int exec_cmd(cmd_buff_t *cmd) {
     }
 }
 
-int execute_pipeline(command_list_t *clist) {
-    int pipes[CMD_MAX-1][2];
-    pid_t pids[CMD_MAX];
+int execute_pipeline(command_list_t *command_list) {
+    int pipe_fds[CMD_MAX-1][2];
+    pid_t child_pids[CMD_MAX];
 
-    for (int i = 0; i < clist->num - 1; i++) {
-        if (pipe(pipes[i]) < 0) {
+    for (int i = 0; i < command_list->num - 1; i++) {
+        if (pipe(pipe_fds[i]) < 0) {
             perror("pipe");
             return ERR_EXEC_CMD;
         }
     }
 
-    for (int i = 0; i < clist->num; i++) {
-        pids[i] = fork();
+    for (int cmd_index = 0; cmd_index < command_list->num; cmd_index++) {
+        child_pids[cmd_index] = fork();
 
-        if (pids[i] < 0) {
+        if (child_pids[cmd_index] < 0) {
             perror("fork");
             return ERR_EXEC_CMD;
-        } else if (pids[i] == 0) {
-            if (i > 0) {
-                dup2(pipes[i-1][0], STDIN_FILENO);
-            }
-            if (i < clist->num - 1) {
-                dup2(pipes[i][1], STDOUT_FILENO);
+        } else if (child_pids[cmd_index] == 0) {
+            if (cmd_index > 0) {
+                dup2(pipe_fds[cmd_index-1][0], STDIN_FILENO);
             }
 
-            for (int j = 0; j < clist->num - 1; j++) {
-                close(pipes[j][0]);
-                close(pipes[j][1]);
+            if (cmd_index < command_list->num - 1) {
+                dup2(pipe_fds[cmd_index][1], STDOUT_FILENO);
             }
 
-            execvp(clist->commands[i].argv[0], clist->commands[i].argv);
+            if (cmd_index == 0 && command_list->commands[cmd_index].input_file != NULL) {
+                int input_fd = open(command_list->commands[cmd_index].input_file, O_RDONLY);
+                if (input_fd < 0) {
+                    perror("open input file");
+                    exit(EXIT_FAILURE);
+                }
+                dup2(input_fd, STDIN_FILENO);
+                close(input_fd);
+            }
+
+            if (cmd_index == command_list->num - 1 && command_list->commands[cmd_index].output_file != NULL) {
+                int output_fd;
+                if (command_list->commands[cmd_index].append_output) {
+                    output_fd = open(command_list->commands[cmd_index].output_file,
+                                    O_WRONLY | O_CREAT | O_APPEND, 0644);
+                } else {
+                    output_fd = open(command_list->commands[cmd_index].output_file,
+                                    O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                }
+
+                if (output_fd < 0) {
+                    perror("open output file");
+                    exit(EXIT_FAILURE);
+                }
+                dup2(output_fd, STDOUT_FILENO);
+                close(output_fd);
+            }
+
+            for (int j = 0; j < command_list->num - 1; j++) {
+                close(pipe_fds[j][0]);
+                close(pipe_fds[j][1]);
+            }
+
+            execvp(command_list->commands[cmd_index].argv[0],
+                   command_list->commands[cmd_index].argv);
+
             perror("execvp");
             exit(EXIT_FAILURE);
         }
     }
 
-    for (int i = 0; i < clist->num - 1; i++) {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
+    for (int i = 0; i < command_list->num - 1; i++) {
+        close(pipe_fds[i][0]);
+        close(pipe_fds[i][1]);
     }
 
-    int last_status = 0;
-    for (int i = 0; i < clist->num; i++) {
+    int last_exit_status = 0;
+    for (int i = 0; i < command_list->num; i++) {
         int status;
-        waitpid(pids[i], &status, 0);
+        waitpid(child_pids[i], &status, 0);
 
-        if (i == clist->num - 1 && WIFEXITED(status)) {
-            last_status = WEXITSTATUS(status);
+        if (i == command_list->num - 1 && WIFEXITED(status)) {
+            last_exit_status = WEXITSTATUS(status);
         }
     }
 
-    return last_status;
+    return last_exit_status;
 }

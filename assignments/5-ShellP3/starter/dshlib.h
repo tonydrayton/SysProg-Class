@@ -21,9 +21,12 @@ typedef struct cmd_buff
     int  argc;
     char *argv[CMD_ARGV_MAX];
     char *_cmd_buffer;
+    char *input_file;
+    char *output_file;
+    int append_output;
 } cmd_buff_t;
 
-/* WIP - Move to next assignment 
+/* WIP - Move to next assignment
 #define N_ARG_MAX    15     //MAX number of args for a command
 typedef struct command{
     char exe [EXE_MAX];
@@ -74,7 +77,7 @@ typedef enum {
     BI_NOT_BI,
     BI_EXECUTED,
 } Built_In_Cmds;
-Built_In_Cmds match_command(const char *input); 
+Built_In_Cmds match_command(const char *input);
 Built_In_Cmds exec_built_in_cmd(cmd_buff_t *cmd);
 
 //main execution context

@@ -9,7 +9,6 @@
 ls
 EOF
 
-    # Assertions
     [ "$status" -eq 0 ]
 }
 
@@ -185,4 +184,98 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" =~ "warning" ]] || [[ "$output" =~ "error" ]] || [[ "$output" =~ "empty command" ]]
+}
+
+@test "Output redirection with > operator" {
+    TEMP_FILE="$(mktemp)"
+
+    run ./dsh <<EOF
+echo "hello, class" > $TEMP_FILE
+cat $TEMP_FILE
+EOF
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "hello, class" ]]
+
+    rm -f "$TEMP_FILE"
+}
+
+@test "Output redirection with >> operator (append mode)" {
+    TEMP_FILE="$(mktemp)"
+
+    run ./dsh <<EOF
+echo "line 1" > $TEMP_FILE
+echo "line 2" >> $TEMP_FILE
+cat $TEMP_FILE
+EOF
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "line 1" ]]
+    [[ "$output" =~ "line 2" ]]
+
+    rm -f "$TEMP_FILE"
+}
+
+@test "Input redirection with < operator" {
+    TEMP_FILE="$(mktemp)"
+    echo "test input data" > "$TEMP_FILE"
+
+    run ./dsh <<EOF
+cat < $TEMP_FILE
+EOF
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "test input data" ]]
+
+    rm -f "$TEMP_FILE"
+}
+
+@test "Combined input and output redirection" {
+    INPUT_FILE="$(mktemp)"
+    OUTPUT_FILE="$(mktemp)"
+
+    echo "test input data" > "$INPUT_FILE"
+
+    run ./dsh <<EOF
+cat < $INPUT_FILE > $OUTPUT_FILE
+cat $OUTPUT_FILE
+EOF
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "test input data" ]]
+
+    rm -f "$INPUT_FILE" "$OUTPUT_FILE"
+}
+
+@test "Redirection with pipe" {
+    TEMP_FILE="$(mktemp)"
+
+    run ./dsh <<EOF
+echo "line with hello and world" | grep "hello" > $TEMP_FILE
+cat $TEMP_FILE
+EOF
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "hello" ]]
+
+    rm -f "$TEMP_FILE"
+}
+
+@test "Multiple redirections in a pipeline" {
+    INPUT_FILE="$(mktemp)"
+    OUTPUT_FILE="$(mktemp)"
+
+    echo "apple\nbanana\ncherry\ndates" > "$INPUT_FILE"
+
+    run ./dsh <<EOF
+cat < $INPUT_FILE | grep "a" > $OUTPUT_FILE
+cat $OUTPUT_FILE
+EOF
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "apple" ]]
+    [[ "$output" =~ "banana" ]]
+    [[ "$output" =~ "dates" ]]
+
+    rm -f "$INPUT_FILE" "$OUTPUT_FILE"
 }
